@@ -1,0 +1,132 @@
+# This file is part of BitBoson.
+#
+# Copyright (c) standard-model
+#
+# standard-model is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# standard-model is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with standard-model.  If not, see <https://www.gnu.org/licenses/>.
+#
+# Written by:
+#     - Tyler Parcell <OriginLegend>
+#
+
+# Setup the main project settings
+project:
+  type: lib
+  name: standard-model
+  version: 0.1.0
+  source: src
+  test: test
+  targets:
+    - default
+
+# Setup the project dependencies
+dependencies:
+
+  # Setup the external dependency: boost
+  - name: boost
+    source: git
+    url: https://github.com/boostorg/boost.git
+    rev: boost-1.69.0
+    type: manual
+    target default:
+      build:
+        - ./bootstrap.sh --exec-prefix=/usr/local
+          --with-libraries=system,filesystem,regex,thread,chrono,context,coroutine
+          --libdir=output/libs
+          --includedir=output/includes
+        - ./b2 variant=release
+        - ./b2 install
+      libs:
+        - output/libs/libboost_atomic.so.1.69.0
+        - output/libs/libboost_chrono.so.1.69.0
+        - output/libs/libboost_context.so.1.69.0
+        - output/libs/libboost_coroutine.so.1.69.0
+        - output/libs/libboost_filesystem.so.1.69.0
+        - output/libs/libboost_regex.so.1.69.0
+        - output/libs/libboost_system.so.1.69.0
+        - output/libs/libboost_thread.so.1.69.0
+      include:
+        - output/includes/
+
+  # Setup the external dependency: leveldb
+  - name: leveldb
+    source: git
+    url: git://github.com/bitboson-deps/leveldb.git
+    rev: 1.22
+    type: manual
+    target default:
+      build:
+        - mkdir -p build
+        - cd build
+        - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
+        - make leveldb
+      libs:
+        - build/libleveldb.so.1
+      include:
+        - include/
+
+  # Setup the external dependency: Crypto++
+  - name: cryptopp
+    source: git
+    url: git://github.com/bitboson-deps/cryptopp.git
+    rev: CRYPTOPP_8_2_0
+    type: manual
+    target default:
+      build:
+        - make dynamic
+        - mkdir -p output-headers/cryptopp
+        - cp *.h output-headers/cryptopp
+      libs:
+        - libcryptopp.so.8
+      include:
+        - output-headers/cryptopp
+
+  # Setup the external dependency: PicoSHA2
+  - name: picosha2
+    source: git
+    url: git://github.com/bitboson-deps/picosha2.git
+    rev: b699e6c900be6e00152db5a3d123c1db42ea13d0
+    type: manual
+    target default:
+      build:
+        - mkdir -p output-headers/picosha2
+        - cp picosha2.h output-headers/picosha2
+      include:
+        - output-headers/picosha2
+
+  # Setup the external dependency: progschj
+  - name: progschj
+    source: git
+    url: git://github.com/bitboson-deps/ThreadPool.git
+    rev: 9a42ec1329f259a5f4881a291db1dcb8f2ad9040
+    type: manual
+    target default:
+      build:
+        - mkdir -p output-headers/progschj
+        - cp ThreadPool.h output-headers/progschj
+      include:
+        - output-headers/progschj
+
+  # Setup the external dependency: argon2
+  - name: argon2
+    source: git
+    url: git://github.com/bitboson-deps/phc-winner-argon2.git
+    rev: 20190702
+    type: manual
+    target default:
+      build:
+        - make
+      libs:
+        - libargon2.so.1
+      include:
+        - include/
