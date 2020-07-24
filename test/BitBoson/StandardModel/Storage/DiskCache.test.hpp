@@ -84,4 +84,21 @@ TEST_CASE ("Replace Items to the Disk Cache", "[DiskCacheTest]")
     REQUIRE(diskCache.getItem("Key1") == "Value2");
 }
 
+TEST_CASE ("Get the Underlying DataStore for the Disk Cache", "[DiskCacheTest]")
+{
+
+    // Create a disk-cache
+    auto diskCache = DiskCache();
+
+    // Insert an item in the cache and verify it is there
+    REQUIRE(diskCache.addItem("Key1", "Value1"));
+    REQUIRE(diskCache.getItem("Key1") == "Value1");
+    REQUIRE(diskCache.getUnderlyingDataStoreRef()->getItem("Key1") == "Value1");
+
+    // Put a new item in the cache and verify it has changed
+    REQUIRE(diskCache.addItem("Key1", "Value2"));
+    REQUIRE(diskCache.getItem("Key1") == "Value2");
+    REQUIRE(diskCache.getUnderlyingDataStoreRef()->getItem("Key1") == "Value2");
+}
+
 #endif //BITBOSON_STANDARDMODEL_DISKCACHE_TEST_HPP

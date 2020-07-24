@@ -58,6 +58,18 @@ std::string DiskCache::getCacheDirectory()
 }
 
 /**
+ * Function used to get the underlying DataStore reference
+ *
+ * @return DataStore reference representing the underlying DataStore
+ */
+std::shared_ptr<DataStore> DiskCache::getUnderlyingDataStoreRef()
+{
+
+    // Get and return the underlying DataStore
+    return _dataStore;
+}
+
+/**
  * Function used to add an item to the disk-cache
  *
  * @param key String representing the key for the item to add
