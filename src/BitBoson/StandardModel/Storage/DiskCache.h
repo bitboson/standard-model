@@ -33,6 +33,7 @@ namespace BitBoson::StandardModel
 
         // Private member variables
         private:
+            bool _shouldPersist;
             std::shared_ptr<DataStore> _dataStore;
 
         // Public member functions
@@ -45,7 +46,16 @@ namespace BitBoson::StandardModel
              * @param directory String representing the directory to store information in
              */
             explicit DiskCache(long cacheSizeInBytes=DataStore::DEFAULT_CACHE_SIZE,
-                               const std::string& directory="");
+                    const std::string& directory="");
+
+           /**
+            * Constructor used to setup the disk-cache instance
+            *
+            * @param directory String representing the directory to store information in
+            * @param cacheSizeInBytes Long representing the cache size (in bytes)
+            */
+           explicit DiskCache(const std::string& directory,
+                    long cacheSizeInBytes=DataStore::DEFAULT_CACHE_SIZE);
 
             /**
              * Function used to get the current cache directory being used
@@ -53,6 +63,14 @@ namespace BitBoson::StandardModel
              * @return String representing the cache directory for the cache
              */
             std::string getCacheDirectory();
+
+            /**
+             * Function used to indicate that the cache should not be deleted
+             * upon destruction of the object's instance
+             *
+             * @param persist Boolean indicating whether the cache should persist
+             */
+            void setPersistOnDestruction(bool persist);
 
             /**
              * Function used to get the underlying DataStore reference
@@ -90,6 +108,17 @@ namespace BitBoson::StandardModel
              * Destructor used to cleanup the cache entirely
              */
             virtual ~DiskCache();
+
+        // Private member functions
+        private:
+
+            /**
+             * Internal function used to setup the disk-cache instance
+             *
+             * @param cacheSizeInBytes Long representing the cache size (in bytes)
+             * @param directory String representing the directory to store information in
+             */
+            void initializeCache(long cacheSizeInBytes, const std::string& directory);
     };
 }
 

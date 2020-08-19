@@ -33,16 +33,21 @@ using namespace BitBoson::StandardModel;
 DiskCache::DiskCache(long cacheSizeInBytes, const std::string& directory)
 {
 
-    // Determine the directory to store information in
-    std::string cacheDirectory;
-    if (directory.empty())
-        cacheDirectory = FileSystem::getTemporaryDir("BitBoson_").getFullPath();
-    else
-        cacheDirectory = directory;
+    // Initialize the cache with the given parameters
+    initializeCache(cacheSizeInBytes, directory);
+}
 
-    // Initialize the underlying data-store
-    _dataStore = std::make_shared<DataStore>(cacheDirectory,
-            false, cacheSizeInBytes);
+/**
+* Constructor used to setup the disk-cache instance
+*
+* @param directory String representing the directory to store information in
+* @param cacheSizeInBytes Long representing the cache size (in bytes)
+*/
+DiskCache::DiskCache(const std::string& directory, long cacheSizeInBytes)
+{
+
+    // Initialize the cache with the given parameters
+    initializeCache(cacheSizeInBytes, directory);
 }
 
 /**
@@ -55,6 +60,19 @@ std::string DiskCache::getCacheDirectory()
 
     // Get and return the cache-directory
     return _dataStore->getDataStoreDirectory();
+}
+
+/**
+ * Function used to indicate that the cache should not be deleted
+ * upon destruction of the object's instance
+ *
+ * @param persist Boolean indicating whether the cache should persist
+ */
+void DiskCache::setPersistOnDestruction(bool persist)
+{
+
+    // Set the persist flag accordingly
+    _shouldPersist = persist;
 }
 
 /**
@@ -110,11 +128,37 @@ bool DiskCache::deleteItem(const std::string& key)
 }
 
 /**
+ * Internal function used to setup the disk-cache instance
+ *
+ * @param cacheSizeInBytes Long representing the cache size (in bytes)
+ * @param directory String representing the directory to store information in
+ */
+void DiskCache::initializeCache(long cacheSizeInBytes, const std::string& directory)
+{
+
+    // Determine the directory to store information in
+    std::string cacheDirectory;
+    if (directory.empty())
+        cacheDirectory = FileSystem::getTemporaryDir("BitBoson_").getFullPath();
+    else
+        cacheDirectory = directory;
+
+    // Initialize the underlying data-store
+    _dataStore = std::make_shared<DataStore>(cacheDirectory,
+            false, cacheSizeInBytes);
+
+    // Assume we will not be persisting the cache by default
+    _shouldPersist = false;
+}
+
+/**
  * Destructor used to cleanup the cache entirely
  */
 DiskCache::~DiskCache()
 {
 
     // Completely cleanup the underlying data-store
-    _dataStore->deleteEntireDataStore(false);
+    // unless indicated otherwise by the persist flag
+    if (!_shouldPersist)
+        _dataStore->deleteEntireDataStore(false);
 }
