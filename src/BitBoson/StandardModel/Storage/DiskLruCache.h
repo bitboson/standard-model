@@ -1,4 +1,4 @@
-/* This file is part of BitBoson.
+/* This file is part of standard-model.
  *
  * Copyright (c) BitBoson
  *
