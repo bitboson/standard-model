@@ -103,6 +103,24 @@ namespace BitBoson::StandardModel
             void deleteEntireDataStore(bool reCreate=false);
 
             /**
+             * Function used to get a next-item iterator based on the given key
+             * NOTE: The first item returned is the reference key, if it exists
+             *
+             * @param refKey String representing the key to use as reference for the next item
+             * @return Generator representing the next-key iterator for the given key
+             */
+            std::shared_ptr<Generator<std::string>> getNextIterator(const std::string& refKey);
+
+            /**
+             * Function used to get a previous-item iterator based on the given key
+             * NOTE: The first item returned is the reference key, if it exists
+             *
+             * @param refKey String representing the key to use as reference for the previous item
+             * @return Generator representing the previous-key iterator for the given key
+             */
+            std::shared_ptr<Generator<std::string>> getPreviousIterator(const std::string& refKey);
+
+            /**
              * Function used to set the data-chunks representing the data-store's internal data
              * NOTE: This will overwrite any conflicting values already in the data-store
              *

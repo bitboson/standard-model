@@ -288,4 +288,86 @@ TEST_CASE ("Data-Store Get/Set Chunks", "[DataStoreTest]")
     tempDir2.removeDir();
 }
 
+TEST_CASE ("Next-Iterator Key Data-Store Test", "[DataStoreTest]")
+{
+
+    // Create a new temporary directory to use
+    auto tempDir = FileSystem::getTemporaryDir("BitBoson");
+
+    // Create a data-store on the temporary directory
+    auto dataStore = DataStore(tempDir.getFullPath());
+
+    // Insert some data in the data-store
+    REQUIRE(dataStore.addItem("Key1", "Value1"));
+    REQUIRE(dataStore.addItem("Key2", "Value2"));
+    REQUIRE(dataStore.addItem("Key3", "Value3"));
+    REQUIRE(dataStore.addItem("Key4", "Value4"));
+    REQUIRE(dataStore.addItem("Key5", "Value5"));
+    REQUIRE(dataStore.addItem("Key6", "Value6"));
+    REQUIRE(dataStore.addItem("Key7", "Value7"));
+
+    // Iterate over all of the next-item keys starting
+    // at the first item in the data-store
+    auto nextIter = dataStore.getNextIterator("Key1");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key1");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key2");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key3");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key4");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key5");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key6");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key7");
+
+    // Iterate over some of the next-item keys starting
+    // at the fourth item in the data-store
+    nextIter = dataStore.getNextIterator("Key4");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key4");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key5");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key6");
+    REQUIRE(nextIter->hasMoreItems());
+    REQUIRE(nextIter->getNextItem() == "Key7");
+
+    // Iterate over all of the previous-item keys starting
+    // at the last item in the data-store
+    auto prevIter = dataStore.getPreviousIterator("Key7");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key7");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key6");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key5");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key4");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key3");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key2");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key1");
+
+    // Iterate over some of the previous-item keys starting
+    // at the fourth item in the data-store
+    prevIter = dataStore.getPreviousIterator("Key4");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key4");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key3");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key2");
+    REQUIRE(prevIter->hasMoreItems());
+    REQUIRE(prevIter->getNextItem() == "Key1");
+
+    // Remove the temporary directory (cleanup)
+    tempDir.removeDir();
+}
+
 #endif //BITBOSON_STANDARDMODEL_DATASTORE_TEST_HPP

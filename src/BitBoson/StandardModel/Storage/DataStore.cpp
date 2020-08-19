@@ -235,6 +235,69 @@ void DataStore::deleteEntireDataStore(bool reCreate)
 }
 
 /**
+ * Function used to get a next-item iterator based on the given key
+ * NOTE: The first item returned is the reference key, if it exists
+ *
+ * @param refKey String representing the key to use as reference for the next item
+ * @return Generator representing the next-key iterator for the given key
+ */
+std::shared_ptr<Generator<std::string>> DataStore::getNextIterator(const std::string& refKey)
+{
+
+    // Create and return a generator for getting the chunked data
+    auto keyValueDb = this->_keyValueDb;
+    return std::make_shared<Generator<std::string>>(
+            [keyValueDb, refKey]
+            (std::shared_ptr<Yieldable<std::string>> yielder)
+    {
+
+        // Get a database iterator
+        leveldb::ReadOptions options;
+        options.fill_cache = false;
+        std::shared_ptr<leveldb::Iterator> dbIter(keyValueDb->NewIterator(options));
+
+        // Loop through all of the keys for the data-store starting at the reference one
+        for (dbIter->Seek(refKey); dbIter->Valid(); dbIter->Next())
+            yielder->yield(dbIter->key().ToString());
+
+        // Complete the generator
+        yielder->complete();
+    });
+}
+
+/**
+ * Function used to get a previous-item iterator based on the given key
+ * NOTE: The first item returned is the reference key, if it exists
+ *
+ * @param refKey String representing the key to use as reference for the previous item
+ * @return Generator representing the previous-key iterator for the given key
+ */
+std::shared_ptr<Generator<std::string>> DataStore::getPreviousIterator(const std::string& refKey)
+{
+
+    // Create and return a generator for getting the chunked data
+    auto keyValueDb = this->_keyValueDb;
+    return std::make_shared<Generator<std::string>>(
+            [keyValueDb, refKey]
+            (std::shared_ptr<Yieldable<std::string>> yielder)
+    {
+
+        // Get a database iterator
+        leveldb::ReadOptions options;
+        options.fill_cache = false;
+        std::shared_ptr<leveldb::Iterator> dbIter(keyValueDb->NewIterator(options));
+
+        // Loop through all of the keys for the data-store starting at the reference one
+        // NOTE: This is done in reverse order to keep getting the previous keys
+        for (dbIter->Seek(refKey); dbIter->Valid(); dbIter->Prev())
+            yielder->yield(dbIter->key().ToString());
+
+        // Complete the generator
+        yielder->complete();
+    });
+}
+
+/**
  * Function used to set the data-chunks representing the data-store's internal data
  * NOTE: This will overwrite any conflicting values already in the data-store
  *
