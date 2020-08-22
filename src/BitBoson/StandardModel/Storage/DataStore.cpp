@@ -254,14 +254,27 @@ std::shared_ptr<Generator<std::string>> DataStore::getNextIterator(const std::st
         // Get a database iterator
         leveldb::ReadOptions options;
         options.fill_cache = false;
-        std::shared_ptr<leveldb::Iterator> dbIter(keyValueDb->NewIterator(options));
+        options.snapshot = keyValueDb->GetSnapshot();
+        leveldb::Iterator* dbIter = keyValueDb->NewIterator(options);
 
         // Loop through all of the keys for the data-store starting at the reference one
         for (dbIter->Seek(refKey); dbIter->Valid(); dbIter->Next())
+        {
+
+            // Yield each item back to the caller as the key only
             yielder->yield(dbIter->key().ToString());
+
+            // If the generator is done pre-maturely, exit the loop
+            if (yielder->isTerminated())
+                break;
+        }
 
         // Complete the generator
         yielder->complete();
+
+        // Cleanup the iterator and snapshot
+        delete dbIter;
+        keyValueDb->ReleaseSnapshot(options.snapshot);
     });
 }
 
@@ -285,16 +298,127 @@ std::shared_ptr<Generator<std::string>> DataStore::getPreviousIterator(const std
         // Get a database iterator
         leveldb::ReadOptions options;
         options.fill_cache = false;
-        std::shared_ptr<leveldb::Iterator> dbIter(keyValueDb->NewIterator(options));
+        options.snapshot = keyValueDb->GetSnapshot();
+        leveldb::Iterator* dbIter = keyValueDb->NewIterator(options);
 
         // Loop through all of the keys for the data-store starting at the reference one
         // NOTE: This is done in reverse order to keep getting the previous keys
         for (dbIter->Seek(refKey); dbIter->Valid(); dbIter->Prev())
+        {
+
+            // Yield each item back to the caller as the key only
             yielder->yield(dbIter->key().ToString());
+
+            // If the generator is done pre-maturely, exit the loop
+            if (yielder->isTerminated())
+                break;
+        }
 
         // Complete the generator
         yielder->complete();
+
+        // Cleanup the iterator and snapshot
+        delete dbIter;
+        keyValueDb->ReleaseSnapshot(options.snapshot);
     });
+}
+
+/**
+ * Function used to get the next key for the given reference key (or empty if invalid)
+ *
+ * @param refKey String representing the key to use as reference
+ * @return String representing the next key for the given key (or empty if invalid)
+ */
+std::string DataStore::getNextKey(const std::string& refKey)
+{
+
+    // Create a return value
+    std::string retValue;
+
+    // Only continue if the provided key is non-empty and is
+    // a key which actually exists in the data-store
+    if ((!refKey.empty()) && (!getItem(refKey).empty()))
+    {
+
+        // Get the next iterator for the supplied key
+        auto nextIter = getNextIterator(refKey);
+
+        // Keep iterating over the next items until we've found the return value
+        while (nextIter->hasMoreItems())
+        {
+
+            // Get the next item from the iterator
+            retValue = nextIter->getNextItem();
+
+            // If the next key is the same as our provided one clear it
+            if (retValue == refKey)
+                retValue = "";
+
+            // If we have found a valid key, quit the remaining items
+            // and exit the loop early with the next key value
+            if (!retValue.empty())
+            {
+
+                // Quit the remaining items
+                nextIter->quitRemainingItems();
+
+                // Exit the loop early
+                break;
+            }
+        }
+    }
+
+    // Return the return value
+    return retValue;
+}
+
+/**
+ * Function used to get the previous key for the given reference key (or empty if invalid)
+ *
+ * @param refKey String representing the key to use as reference
+ * @return String representing the previous key for the given key (or empty if invalid)
+ */
+std::string DataStore::getPreviousKey(const std::string& refKey)
+{
+
+    // Create a return value
+    std::string retValue;
+
+    // Only continue if the provided key is non-empty and is
+    // a key which actually exists in the data-store
+    if ((!refKey.empty()) && (!getItem(refKey).empty()))
+    {
+
+        // Get the previous iterator for the supplied key
+        auto nextIter = getPreviousIterator(refKey);
+
+        // Keep iterating over the next items until we've found the return value
+        while (nextIter->hasMoreItems())
+        {
+
+            // Get the next item from the iterator
+            retValue = nextIter->getNextItem();
+
+            // If the next key is the same as our provided one clear it
+            if (retValue == refKey)
+                retValue = "";
+
+            // If we have found a valid key, quit the remaining items
+            // and exit the loop early with the next key value
+            if (!retValue.empty())
+            {
+
+                // Quit the remaining items
+                nextIter->quitRemainingItems();
+
+                // Exit the loop early
+                break;
+            }
+        }
+    }
+
+    // Return the return value
+    return retValue;
 }
 
 /**

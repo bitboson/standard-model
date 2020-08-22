@@ -42,6 +42,7 @@ namespace BitBoson::StandardModel
         // Private member functions
         private:
             bool _isItemDone;
+            bool _isTerminated;
             bool _hasYieldedOnce;
             std::queue<T> _queue;
             std::mutex _mutex;
@@ -57,6 +58,7 @@ namespace BitBoson::StandardModel
                 // Initialize state variables
                 _isItemDone = false;
                 _hasYieldedOnce = false;
+                _isTerminated = false;
             }
 
             void yield(T currentItem)
@@ -86,19 +88,52 @@ namespace BitBoson::StandardModel
                 }
             }
 
+            /**
+             * Function used to check whether the Yieldable
+             * has terminated
+             *
+             * @return Boolean indicating whether the Yieldable
+             *         has terminated
+             */
+            bool isTerminated()
+            {
+
+                // Lock the current function call
+                std::unique_lock<std::mutex> lock(_mutex);
+
+                // Return the status of the yieldable
+                return _isItemDone;
+            }
+
             void complete()
             {
 
                 // Lock the current function call
                 std::unique_lock<std::mutex> lock(_mutex);
 
-                // Indicate that no more items are pending
-                _isItemDone = true;
+                // Only handle the complete if we didn't
+                // already do so (ensure it's called once)
+                if (!_isItemDone)
+                {
 
-                // Notify both waiting portions to complete
-                lock.unlock();
-                _getConditional.notify_all();
-                _yieldConditional.notify_all();
+                    // Indicate that no more items are pending
+                    _isItemDone = true;
+
+                    // Notify both waiting portions to complete
+                    lock.unlock();
+                    _getConditional.notify_all();
+                    _yieldConditional.notify_all();
+                }
+            }
+
+            /**
+             * Destructor used to cleanup the instance
+             */
+            virtual ~Yieldable()
+            {
+
+                // Ensure that the yieldable is completed
+                complete();
             }
 
         // Protected member functions
@@ -155,6 +190,8 @@ namespace BitBoson::StandardModel
 
         // Private member variables
         private:
+            bool _hasAskedIfMoreItems;
+            bool _previousItemAskAnswer;
             std::thread _thread;
             std::shared_ptr<Yieldable<T>> _yieldable;
 
@@ -163,26 +200,62 @@ namespace BitBoson::StandardModel
 
             explicit Generator(std::function<void (std::shared_ptr<Yieldable<T>>)> generatorFunction)
             {
+
+                // Setup the internal yieldable thread process
                 _yieldable = std::make_shared<Yieldable<T>>();
                 _thread = std::thread(generatorFunction, _yieldable);
+
+                // Setup status/state variables for the generator
+                _hasAskedIfMoreItems = false;
+                _previousItemAskAnswer = false;
             }
 
             bool hasMoreItems()
             {
 
-                // Get and return whether the yielder has more items
-                return !_yieldable->isItemDone();
+                // Create a return flag based on the previous answer
+                bool retFlag = _previousItemAskAnswer;
+
+                // Only continue if we haven't queried without a state change
+                // In which case we will actually request the status
+                if (!_hasAskedIfMoreItems)
+                    retFlag = !_yieldable->isItemDone();
+
+                // Indicate that we have recently queried the status
+                // and save the response of such query
+                _hasAskedIfMoreItems = true;
+                _previousItemAskAnswer = retFlag;
+
+                // Return the return flag
+                return retFlag;
             }
 
             T getNextItem()
             {
 
+                // Indicate that there has been a state change and
+                // that new queries on item status can be made
+                _hasAskedIfMoreItems = false;
+
                 // Get and return the next item of the yielder
                 return _yieldable->getCurrentItem();
             }
 
+            /**
+             * Function used to quit the remaining items
+             */
+            void quitRemainingItems()
+            {
+
+                // Simply call "complete" on the yieldable
+                _yieldable->complete();
+            }
+
             virtual ~Generator()
             {
+
+                // Quit any remaining items
+                quitRemainingItems();
 
                 // Wait for the thread to exit
                 _thread.join();

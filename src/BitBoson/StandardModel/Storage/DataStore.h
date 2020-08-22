@@ -121,6 +121,22 @@ namespace BitBoson::StandardModel
             std::shared_ptr<Generator<std::string>> getPreviousIterator(const std::string& refKey);
 
             /**
+             * Function used to get the next key for the given reference key (or empty if invalid)
+             *
+             * @param refKey String representing the key to use as reference
+             * @return String representing the next key for the given key (or empty if invalid)
+             */
+            std::string getNextKey(const std::string& refKey);
+
+            /**
+             * Function used to get the previous key for the given reference key (or empty if invalid)
+             *
+             * @param refKey String representing the key to use as reference
+             * @return String representing the previous key for the given key (or empty if invalid)
+             */
+            std::string getPreviousKey(const std::string& refKey);
+
+            /**
              * Function used to set the data-chunks representing the data-store's internal data
              * NOTE: This will overwrite any conflicting values already in the data-store
              *
