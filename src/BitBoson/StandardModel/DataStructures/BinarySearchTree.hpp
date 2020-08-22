@@ -24,6 +24,7 @@
 
 #include <stack>
 #include <memory>
+#include <boost/lexical_cast.hpp>
 #include <BitBoson/StandardModel/DataStructures/Containers/BaseNode.hpp>
 
 namespace BitBoson::StandardModel
