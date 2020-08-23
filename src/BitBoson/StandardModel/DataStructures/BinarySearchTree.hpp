@@ -117,10 +117,22 @@ namespace BitBoson::StandardModel
 
                 // Get the root element if the root is not null
                 if (_rootNode != nullptr)
-                    retVal = _rootNode->getData();
+                    retVal = getRootNode()->getData();
 
                 // Return the return value
                 return retVal;
+            }
+
+            /**
+             * Function used to get the root node of the tree
+             *
+             * @return Generic Data (T) representing the root node
+             */
+            std::shared_ptr<BaseNode<T>> getRootNode()
+            {
+
+                // Return the root node
+                return _rootNode;
             }
 
             /**
