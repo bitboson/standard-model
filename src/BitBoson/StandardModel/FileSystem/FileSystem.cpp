@@ -345,3 +345,83 @@ bool FileSystem::writeFile(const std::shared_ptr<Generator<std::string>>& fileCo
     // Return the return flag
     return retFlag;
 }
+
+/**
+ * Function used to read-in the current object as a file
+ * NOTE: This will not buffer the file at all and will return it in full
+ *
+ * @return String representing the full file contents
+ */
+std::string FileSystem::readSimpleFile()
+{
+
+    // Create a return value
+    std::string retVal;
+
+    // Only continue if this is a file and exists
+    if (exists() && isFile())
+    {
+
+        // Create an input stream for reading in the content
+        auto fullPath = getFullPath();
+        std::ifstream fileContents(fullPath);
+
+        // Define the buffer size and read buffered-chunks
+        auto bufferSize = (1024 * 1024);
+        char *buffer(new char[bufferSize]);
+        while (fileContents && !fileContents.eof())
+        {
+
+            // Continuously read from the file until the desired
+            // chunk/buffer size has been reached
+            long actualSize = 0;
+            while ((actualSize < bufferSize) && !fileContents.eof())
+            {
+
+                // Actually perform the buffered-chunk read
+                auto currSize = fileContents.readsome(buffer, (bufferSize - actualSize));
+                retVal += std::string(buffer, currSize);
+                actualSize += currSize;
+                fileContents.peek();
+            }
+        }
+
+        // Delete the temporary buffer
+        delete[] buffer;
+    }
+
+    // Return the return value
+    return retVal;
+}
+
+/**
+ * Function used to write content to the disk as the current file
+ * NOTE: This will not buffer the file at all and will write it in full
+ *
+ * @param fileContent String representing the full file contents to write
+ */
+bool FileSystem::writeSimpleFile(const std::string& fileContent)
+{
+
+    // Create a return flag
+    bool retFlag = false;
+
+    // Only continue if this file does not exist already
+    if (!exists())
+    {
+
+        // Create and open the file-reference
+        FILE* pFile;
+        pFile = std::fopen(getFullPath().c_str(), "wb");
+
+        // Actually write the file-contents in full
+        fwrite(fileContent.c_str(), 1, fileContent.size(), pFile);
+
+        // Close the file-handle
+        fclose(pFile);
+        retFlag = true;
+    }
+
+    // Return the return flag
+    return retFlag;
+}

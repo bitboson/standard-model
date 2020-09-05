@@ -141,6 +141,22 @@ namespace BitBoson::StandardModel
              */
             bool writeFile(const std::shared_ptr<Generator<std::string>>& fileContent);
 
+            /**
+             * Function used to read-in the current object as a file
+             * NOTE: This will not buffer the file at all and will return it in full
+             *
+             * @return String representing the full file contents
+             */
+            std::string readSimpleFile();
+
+            /**
+             * Function used to write content to the disk as the current file
+             * NOTE: This will not buffer the file at all and will write it in full
+             *
+             * @param fileContent String representing the full file contents to write
+             */
+            bool writeSimpleFile(const std::string& fileContent);
+
         // Private member functions
         private:
 

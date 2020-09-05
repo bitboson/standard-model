@@ -26,6 +26,24 @@
 
 using namespace BitBoson::StandardModel;
 
+TEST_CASE ("Writing/Reading Simple Data to File Test", "[FileSystemTest]")
+{
+
+    // Create a temporary directory
+    auto tempDir = FileSystem::getTemporaryDir("BitBosonTest_");
+    auto tempFile = tempDir.getChild("TestSmallFile");
+
+    // Write the content to the file
+    REQUIRE (tempFile.writeSimpleFile("Hello World!"));
+
+    // Read back the content from the file
+    REQUIRE (tempFile.readSimpleFile() == "Hello World!");
+
+    // Delete the temporary directory
+    tempFile.removeFile();
+    tempDir.removeDir();
+}
+
 TEST_CASE ("Writing/Reading Small Data to File Test", "[FileSystemTest]")
 {
 
