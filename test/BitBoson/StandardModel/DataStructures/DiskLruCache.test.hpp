@@ -19,19 +19,19 @@
  *     - Tyler Parcell <OriginLegend>
  */
 
-#ifndef BITBOSON_STANDARDMODEL_DISKLRUCACHE_TEST_HPP
-#define BITBOSON_STANDARDMODEL_DISKLRUCACHE_TEST_HPP
+#ifndef BITBOSON_STANDARDMODEL_LRUCACHE_TEST_HPP
+#define BITBOSON_STANDARDMODEL_LRUCACHE_TEST_HPP
 
-#include <BitBoson/StandardModel/Storage/DiskLruCache.h>
+#include <BitBoson/StandardModel/DataStructures/LruCache.hpp>
 
 using namespace BitBoson::StandardModel;
 
-class DummyCacheSupplier : public DiskLruCache::DiskLruCacheSupplier
+class DummyCacheSupplier : public LruCache<std::string>::LruCacheSupplier
 {
     private:
         std::unordered_map<std::string, std::string> _dataMap;
     public:
-        bool addItem(const std::string& key, const std::string& item) override
+        bool addItem(const std::string& key, std::string item) override
         { _dataMap[key] = item; return true; }
         std::string getItem(const std::string& key) override
         { return _dataMap[key]; }
@@ -40,12 +40,12 @@ class DummyCacheSupplier : public DiskLruCache::DiskLruCacheSupplier
         virtual ~DummyCacheSupplier() = default;
 };
 
-TEST_CASE ("General LRU Cache Operation", "[DiskLruCacheTest]")
+TEST_CASE ("General LRU Cache Operation", "[LruCacheTest]")
 {
 
     // Create the LRU Cache instance
     auto cacheSupplier = std::make_shared<DummyCacheSupplier>();
-    auto diskLruCache = std::make_shared<DiskLruCache>(cacheSupplier, 50, 25);
+    auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 5);
 
     // Add some items to the cache
     REQUIRE(diskLruCache->addItem("Key0", "Value0"));
@@ -96,12 +96,12 @@ TEST_CASE ("General LRU Cache Operation", "[DiskLruCacheTest]")
     REQUIRE(diskLruCache->getItem("Key9") == "Value9");
 }
 
-TEST_CASE ("LRU Cache Write-Back Test", "[DiskLruCacheTest]")
+TEST_CASE ("LRU Cache Write-Back Test", "[LruCacheTest]")
 {
 
     // Create the LRU Cache instance
     auto cacheSupplier = std::make_shared<DummyCacheSupplier>();
-    auto diskLruCache = std::make_shared<DiskLruCache>(cacheSupplier, 50, 25);
+    auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 5);
 
     // Add some items to the cache
     REQUIRE(diskLruCache->addItem("Key0", "Value0"));
@@ -128,7 +128,7 @@ TEST_CASE ("LRU Cache Write-Back Test", "[DiskLruCacheTest]")
     REQUIRE(cacheSupplier->getItem("Key1") == "Value1");
     REQUIRE(cacheSupplier->getItem("Key2") == "Value2");
     REQUIRE(cacheSupplier->getItem("Key3") == "Value3");
-    REQUIRE(cacheSupplier->getItem("Key4").empty());
+    REQUIRE(cacheSupplier->getItem("Key4") == "Value4");
     REQUIRE(cacheSupplier->getItem("Key5").empty());
     REQUIRE(cacheSupplier->getItem("Key6").empty());
     REQUIRE(cacheSupplier->getItem("Key7").empty());
@@ -190,12 +190,12 @@ TEST_CASE ("LRU Cache Write-Back Test", "[DiskLruCacheTest]")
     REQUIRE(diskLruCache->getItem("Key9") == "Value9");
 }
 
-TEST_CASE ("Add Duplicate Items LRU Cache Operation", "[DiskLruCacheTest]")
+TEST_CASE ("Add Duplicate Items LRU Cache Operation", "[LruCacheTest]")
 {
 
     // Create the LRU Cache instance
     auto cacheSupplier = std::make_shared<DummyCacheSupplier>();
-    auto diskLruCache = std::make_shared<DiskLruCache>(cacheSupplier, 50, 25);
+    auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 5);
 
     // Add some items to the cache (enough to force write-back)
     REQUIRE(diskLruCache->addItem("Key0", "Value0"));
@@ -227,12 +227,12 @@ TEST_CASE ("Add Duplicate Items LRU Cache Operation", "[DiskLruCacheTest]")
     REQUIRE(diskLruCache->getItem("Key9") == "NewValue9");
 }
 
-TEST_CASE ("Too-Small LRU Cache Operation", "[DiskLruCacheTest]")
+TEST_CASE ("Very-Small LRU Cache Operation", "[LruCacheTest]")
 {
 
     // Create the LRU Cache instance
     auto cacheSupplier = std::make_shared<DummyCacheSupplier>();
-    auto diskLruCache = std::make_shared<DiskLruCache>(cacheSupplier, 0, 0);
+    auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 1);
 
     // Add some items to the cache
     REQUIRE(diskLruCache->addItem("Key0", "Value0"));
@@ -259,4 +259,36 @@ TEST_CASE ("Too-Small LRU Cache Operation", "[DiskLruCacheTest]")
     REQUIRE(diskLruCache->getItem("Key9") == "Value9");
 }
 
-#endif //BITBOSON_STANDARDMODEL_DISKLRUCACHE_TEST_HPP
+TEST_CASE ("Very-Large LRU Cache Operation", "[LruCacheTest]")
+{
+
+    // Create the LRU Cache instance
+    auto cacheSupplier = std::make_shared<DummyCacheSupplier>();
+    auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 1024);
+
+    // Add some items to the cache
+    REQUIRE(diskLruCache->addItem("Key0", "Value0"));
+    REQUIRE(diskLruCache->addItem("Key1", "Value1"));
+    REQUIRE(diskLruCache->addItem("Key2", "Value2"));
+    REQUIRE(diskLruCache->addItem("Key3", "Value3"));
+    REQUIRE(diskLruCache->addItem("Key4", "Value4"));
+    REQUIRE(diskLruCache->addItem("Key5", "Value5"));
+    REQUIRE(diskLruCache->addItem("Key6", "Value6"));
+    REQUIRE(diskLruCache->addItem("Key7", "Value7"));
+    REQUIRE(diskLruCache->addItem("Key8", "Value8"));
+    REQUIRE(diskLruCache->addItem("Key9", "Value9"));
+
+    // Get all items from the cache
+    REQUIRE(diskLruCache->getItem("Key0") == "Value0");
+    REQUIRE(diskLruCache->getItem("Key1") == "Value1");
+    REQUIRE(diskLruCache->getItem("Key2") == "Value2");
+    REQUIRE(diskLruCache->getItem("Key3") == "Value3");
+    REQUIRE(diskLruCache->getItem("Key4") == "Value4");
+    REQUIRE(diskLruCache->getItem("Key5") == "Value5");
+    REQUIRE(diskLruCache->getItem("Key6") == "Value6");
+    REQUIRE(diskLruCache->getItem("Key7") == "Value7");
+    REQUIRE(diskLruCache->getItem("Key8") == "Value8");
+    REQUIRE(diskLruCache->getItem("Key9") == "Value9");
+}
+
+#endif //BITBOSON_STANDARDMODEL_LRUCACHE_TEST_HPP
