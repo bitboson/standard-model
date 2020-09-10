@@ -239,7 +239,7 @@ namespace BitBoson::StandardModel
 
                     // If we had to get the node from the supplier then
                     // add it back to the cache and update it accordingly
-                    if (mapVal == nullptr)
+                    if ((mapVal == nullptr) && (!retVal.empty()))
                         addItem(key, retVal);
                 }
 
