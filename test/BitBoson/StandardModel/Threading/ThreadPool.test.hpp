@@ -45,6 +45,7 @@ TEST_CASE("Single-Threaded Integer Sum", "[ThreadPoolTest]")
     // Wait for the thread pool to stop processing data
     while (!threadPool.isQueueEmpty())
         std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Verify that the global count comes out as expected
     REQUIRE(globalCount == 499500);
@@ -73,6 +74,37 @@ TEST_CASE("Multi-Threaded Integer Sum", "[ThreadPoolTest]")
     // Wait for the thread pool to stop processing data
     while (!threadPool.isQueueEmpty())
         std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
+
+    // Verify that the global count comes out as expected
+    REQUIRE(globalCount == 499500);
+}
+
+TEST_CASE("Forced-Collissions Multi-Threaded Integer Sum", "[ThreadPoolTest]")
+{
+
+    // Create a global count to verify the sum later
+    long globalCount = 0;
+
+    // Add-in a mutex to protext the global sum
+    std::mutex mutex;
+
+    // Create a thread pool with only one thread
+    auto threadPool = ThreadPool<int>(
+        [&globalCount, &mutex](std::shared_ptr<int> val) {
+            std::unique_lock<std::mutex> lock(mutex);
+            std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            globalCount += *val;
+        }, 10);
+
+    // Enqueue values to add to the global sum
+    for (int ii = 0; ii < 1000; ii++)
+        threadPool.enqueue(std::make_shared<int>(ii));
+
+    // Wait for the thread pool to stop processing data
+    while (!threadPool.isQueueEmpty())
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Verify that the global count comes out as expected
     REQUIRE(globalCount == 499500);
@@ -125,6 +157,7 @@ TEST_CASE("Single-Threaded String Concatenation", "[ThreadPoolTest]")
     // Wait for the thread pool to stop processing data
     while (!threadPool.isQueueEmpty())
         std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Verify that the global count comes out as expected
     REQUIRE(globalString.length() == 2890);
@@ -153,6 +186,7 @@ TEST_CASE("Multi-Threaded String Concatenation", "[ThreadPoolTest]")
     // Wait for the thread pool to stop processing data
     while (!threadPool.isQueueEmpty())
         std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Verify that the global count comes out as expected
     REQUIRE(globalString.length() == 2890);
@@ -181,6 +215,7 @@ TEST_CASE("Default-Threaded String Concatenation", "[ThreadPoolTest]")
     // Wait for the thread pool to stop processing data
     while (!threadPool.isQueueEmpty())
         std::this_thread::sleep_for(std::chrono::seconds(1));
+    std::this_thread::sleep_for(std::chrono::seconds(1));
 
     // Verify that the global count comes out as expected
     REQUIRE(globalString.length() == 2890);

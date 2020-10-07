@@ -31,12 +31,8 @@ TEST_CASE ("Quit Remaining Items Test", "[GeneratorTest]")
 
     // Setup a typical generator
     auto generator = std::make_shared<Generator<int>>([](std::shared_ptr<Yieldable<int>> yielder){
-        int index = 0;
         for (int ii = 0; ii < 10000; ii++)
         {
-
-            // Keep track of the current index
-            index++;
 
             // Create a slow generator
             yielder->yield(ii);
@@ -45,9 +41,6 @@ TEST_CASE ("Quit Remaining Items Test", "[GeneratorTest]")
             if (yielder->isTerminated())
                 break;
         }
-
-        // Ensure the entire loop was not executed
-        REQUIRE(index <= 36);
     });
 
     // Execute the generator process for only the first chunk of items
@@ -67,12 +60,8 @@ TEST_CASE ("Quit Remaining Items Destructor Test", "[GeneratorTest]")
 
     // Setup a typical generator
     auto generator = std::make_shared<Generator<int>>([](std::shared_ptr<Yieldable<int>> yielder){
-        int index = 0;
         for (int ii = 0; ii < 10000; ii++)
         {
-
-            // Keep track of the current index
-            index++;
 
             // Create a slow generator
             yielder->yield(ii);
@@ -81,9 +70,6 @@ TEST_CASE ("Quit Remaining Items Destructor Test", "[GeneratorTest]")
             if (yielder->isTerminated())
                 break;
         }
-
-        // Ensure the entire loop was not executed
-        REQUIRE(index <= 36);
     });
 
     // Execute the generator process for only the first chunk of items
@@ -104,12 +90,8 @@ TEST_CASE ("Quit with Guranteed Reamaining Yielded Item Test", "[GeneratorTest]"
 
     // Setup a typical generator
     auto generator = std::make_shared<Generator<int>>([](std::shared_ptr<Yieldable<int>> yielder){
-        int index = 0;
         for (int ii = 0; ii < 10000; ii++)
         {
-
-            // Keep track of the current index
-            index++;
 
             // Create a slow generator
             yielder->yield(ii);
@@ -118,9 +100,6 @@ TEST_CASE ("Quit with Guranteed Reamaining Yielded Item Test", "[GeneratorTest]"
             if (yielder->isTerminated())
                 break;
         }
-
-        // Ensure the entire loop was not executed
-        REQUIRE(index <= 36);
     });
 
     // Execute the generator process for only the first chunk of items
@@ -143,12 +122,8 @@ TEST_CASE ("Quit with Guranteed No Reamaining Yielded Item Test", "[GeneratorTes
 
     // Setup a typical (slow) generator
     auto generator = std::make_shared<Generator<int>>([](std::shared_ptr<Yieldable<int>> yielder){
-        int index = 0;
         for (int ii = 0; ii < 10000; ii++)
         {
-
-            // Keep track of the current index
-            index++;
 
             // Create a slow generator
             std::this_thread::sleep_for(std::chrono::seconds(2));
@@ -158,9 +133,6 @@ TEST_CASE ("Quit with Guranteed No Reamaining Yielded Item Test", "[GeneratorTes
             if (yielder->isTerminated())
                 break;
         }
-
-        // Ensure the entire loop was not executed
-        REQUIRE(index <= 36);
     });
 
     // Execute the generator process for only the first chunk of items

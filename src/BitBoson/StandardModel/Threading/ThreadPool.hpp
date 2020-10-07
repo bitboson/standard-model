@@ -135,9 +135,6 @@ namespace BitBoson::StandardModel
             void safelyCallCallback(std::shared_ptr<T> dataToUse)
             {
 
-                // Lock the thread for safe operation
-                std::unique_lock<std::mutex> lock(_lock);
-
                 // Safely call the callback now (due to mutex)
                 _callback(dataToUse);
             }
