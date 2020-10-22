@@ -39,6 +39,7 @@ TEST_CASE ("General Lock-Key Manager Test", "[LockKeyManagerTest]")
 
             // Use the Lock-Key Manager to protect the global count
             auto lock = LockKeyManager::getLock("globalCount");
+            std::cout << *val << std::endl;
 
             // Update the global count value
             globalCount += *val;
@@ -48,7 +49,7 @@ TEST_CASE ("General Lock-Key Manager Test", "[LockKeyManagerTest]")
         }, 10);
 
     // Enqueue values to add to the global sum
-    for (int ii = 0; ii < 1000; ii++)
+    for (int ii = 0; ii < 10000; ii++)
         threadPool.enqueue(std::make_shared<int>(ii));
 
     // Wait for the thread pool to stop processing data
@@ -57,7 +58,7 @@ TEST_CASE ("General Lock-Key Manager Test", "[LockKeyManagerTest]")
 
     // Verify that the global count comes out as expected
     std::this_thread::sleep_for(std::chrono::seconds(2));
-    REQUIRE(globalCount == 499500);
+    REQUIRE(globalCount == 49995000);
 }
 
 TEST_CASE ("Forced-No-Collission General Lock-Key Manager Test", "[LockKeyManagerTest]")
@@ -108,6 +109,7 @@ TEST_CASE ("Forced-Collission General Lock-Key Manager Test", "[LockKeyManagerTe
 
             // Use the Lock-Key Manager to protect the global count
             auto lock = LockKeyManager::getLock("globalCount");
+            std::cout << *val << std::endl;
 
             // Ensure the thread sleeps to force wait conditions
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
@@ -120,7 +122,7 @@ TEST_CASE ("Forced-Collission General Lock-Key Manager Test", "[LockKeyManagerTe
         }, 10);
 
     // Enqueue values to add to the global sum
-    for (int ii = 0; ii < 1000; ii++)
+    for (int ii = 0; ii < 10000; ii++)
         threadPool.enqueue(std::make_shared<int>(ii));
 
     // Wait for the thread pool to stop processing data
@@ -129,7 +131,7 @@ TEST_CASE ("Forced-Collission General Lock-Key Manager Test", "[LockKeyManagerTe
 
     // Verify that the global count comes out as expected
     std::this_thread::sleep_for(std::chrono::seconds(2));
-    REQUIRE(globalCount == 499500);
+    REQUIRE(globalCount == 49995000);
 }
 
 TEST_CASE ("Multi-Lock General Lock-Key Manager Test", "[LockKeyManagerTest]")
@@ -149,6 +151,7 @@ TEST_CASE ("Multi-Lock General Lock-Key Manager Test", "[LockKeyManagerTest]")
             // Use the Lock-Key Manager to protect the global count
             auto currCount = ((*val) % 4);
             auto lock = LockKeyManager::getLock("globalCount" + std::to_string(currCount));
+            std::cout << *val << std::endl;
 
             // Update the global count value
             if (currCount == 0)
@@ -165,7 +168,7 @@ TEST_CASE ("Multi-Lock General Lock-Key Manager Test", "[LockKeyManagerTest]")
         }, 10);
 
     // Enqueue values to add to the global sum
-    for (int ii = 0; ii < 1000; ii++)
+    for (int ii = 0; ii < 10000; ii++)
         threadPool.enqueue(std::make_shared<int>(ii));
 
     // Wait for the thread pool to stop processing data
@@ -174,10 +177,10 @@ TEST_CASE ("Multi-Lock General Lock-Key Manager Test", "[LockKeyManagerTest]")
 
     // Verify that the global count comes out as expected
     std::this_thread::sleep_for(std::chrono::seconds(2));
-    REQUIRE(globalCount1 == 250);
-    REQUIRE(globalCount2 == 250);
-    REQUIRE(globalCount3 == 250);
-    REQUIRE(globalCount4 == 250);
+    REQUIRE(globalCount1 == 2500);
+    REQUIRE(globalCount2 == 2500);
+    REQUIRE(globalCount3 == 2500);
+    REQUIRE(globalCount4 == 2500);
 }
 
 TEST_CASE ("Multi-Lock Forced-No-Collission General Lock-Key Manager Test", "[LockKeyManagerTest]")
@@ -252,6 +255,7 @@ TEST_CASE ("Forced-Collission Multi-Lock General Lock-Key Manager Test", "[LockK
             auto currCount = ((*val) % 4);
             auto lock = LockKeyManager::getLock("globalCount" + std::to_string(currCount));
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
+            std::cout << *val << std::endl;
 
             // Update the global count value
             if (currCount == 0)
@@ -268,7 +272,7 @@ TEST_CASE ("Forced-Collission Multi-Lock General Lock-Key Manager Test", "[LockK
         }, 10);
 
     // Enqueue values to add to the global sum
-    for (int ii = 0; ii < 1000; ii++)
+    for (int ii = 0; ii < 10000; ii++)
         threadPool.enqueue(std::make_shared<int>(ii));
 
     // Wait for the thread pool to stop processing data
@@ -277,10 +281,10 @@ TEST_CASE ("Forced-Collission Multi-Lock General Lock-Key Manager Test", "[LockK
 
     // Verify that the global count comes out as expected
     std::this_thread::sleep_for(std::chrono::seconds(2));
-    REQUIRE(globalCount1 == 250);
-    REQUIRE(globalCount2 == 250);
-    REQUIRE(globalCount3 == 250);
-    REQUIRE(globalCount4 == 250);
+    REQUIRE(globalCount1 == 2500);
+    REQUIRE(globalCount2 == 2500);
+    REQUIRE(globalCount3 == 2500);
+    REQUIRE(globalCount4 == 2500);
 }
 
 #endif //BITBOSON_STANDARDMODEL_LOCKKEYMANAGER_TEST_HPP

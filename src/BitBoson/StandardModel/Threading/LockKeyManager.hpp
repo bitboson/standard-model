@@ -35,8 +35,8 @@ namespace BitBoson::StandardModel
         // Friend the Lock class
         friend class Lock;
 
-        // Private member class
-        private:
+        // Public member class
+        public:
 
             class Lock
             {
