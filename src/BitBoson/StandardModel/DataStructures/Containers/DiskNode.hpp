@@ -321,7 +321,7 @@ namespace BitBoson::StandardModel
                     {
 
                         // Extract the packed vector of data in the file-string
-                        auto packedVect = Utils::parseFileString(nodeData, false);
+                        auto packedVect = Utils::parseFileString(nodeData);
                         if (packedVect.size() >= 4)
                         {
 

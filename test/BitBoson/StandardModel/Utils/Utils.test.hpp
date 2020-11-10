@@ -143,86 +143,96 @@ TEST_CASE ("Create/Parse File-String Test", "[UtilsTest]")
     packedVect.emplace_back("?");
 
     // Create a file-string from the packed vector
-    REQUIRE (Utils::getFileString(std::vector<std::string>()) == "e317fQ==");
-    REQUIRE (Utils::getFileString(std::vector<std::string>(), "") == "e317fQ==");
-    REQUIRE (Utils::getFileString(std::vector<std::string>(), "Signature") == "e317VTJsbmJtRjBkWEpsfQ==");
-    REQUIRE (Utils::getFileString(packedVect) == "e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH17fQ==");
-    REQUIRE (Utils::getFileString(packedVect, "") == "e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH17fQ==");
-    REQUIRE (Utils::getFileString(packedVect, "Signature") == "e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09"
-                                                             "LH17VTJsbmJtRjBkWEpsfQ==");
+    REQUIRE (Utils::getFileString(std::vector<std::string>()) == "e30=");
+    REQUIRE (Utils::getFileString(packedVect) == "e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH0=");
 
     // Parse a completely empty file string into a packed vector
-    auto packedVect2 = Utils::parseFileString("", true);
-    REQUIRE (packedVect2.empty());
+    auto packedVectOut = Utils::parseFileString("");
+    REQUIRE (packedVectOut.empty());
 
-    // Parse a completely empty file string into a packed vector
-    packedVect2 = Utils::parseFileString("", false);
-    REQUIRE (packedVect2.empty());
+    // Parse the empty file-string back into a packed vector
+    packedVectOut = Utils::parseFileString("e30=");
+    REQUIRE (packedVectOut.empty());
 
-    // Parse the empty file-string with the empty signature back into a packed vector
-    packedVect2 = Utils::parseFileString("e317fQ==", true);
-    REQUIRE (packedVect2.empty());
+    // Parse the file-string back into a packed vector
+    packedVectOut = Utils::parseFileString("e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH0=");
+    REQUIRE (packedVectOut.size() == 7);
+    REQUIRE (packedVectOut[0] == "Hello");
+    REQUIRE (packedVectOut[1] == "World");
+    REQUIRE (packedVectOut[2].empty());
+    REQUIRE (packedVectOut[3] == "How");
+    REQUIRE (packedVectOut[4] == "Are");
+    REQUIRE (packedVectOut[5] == "You");
+    REQUIRE (packedVectOut[6] == "?");
 
-    // Parse the empty file-string without the empty signature back into a packed vector
-    packedVect2 = Utils::parseFileString("e317fQ==", false);
-    REQUIRE (packedVect2.empty());
+    // Create a file-string from the given information
+    auto fileString = Utils::getFileString(packedVect);
+    REQUIRE (fileString == "e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH0=");
 
-    // Parse the empty file-string (plus signature) with the signature back into a packed vector
-    packedVect2 = Utils::parseFileString("e317VTJsbmJtRjBkWEpsfQ==", true);
-    REQUIRE (packedVect2.size() == 1);
-    REQUIRE (packedVect2[0] == "Signature");
+    // Create a new random packed vector including the previous
+    std::vector<std::string> packedVect2;
+    packedVect2.emplace_back("1");
+    packedVect2.emplace_back("2");
+    packedVect2.emplace_back(fileString);
+    packedVect2.emplace_back("3");
+    packedVect2.emplace_back("4");
+    packedVect2.emplace_back("5");
+    packedVect2.emplace_back("6");
 
-    // Parse the empty file-string (plus signature) without the signature back into a packed vector
-    packedVect2 = Utils::parseFileString("e317VTJsbmJtRjBkWEpsfQ==", false);
-    REQUIRE (packedVect2.empty());
+    // Create a file-string from the given information
+    auto fileString2 = Utils::getFileString(packedVect2);
+    REQUIRE (fileString2 == "e01RPT0sTWc9PSxaVEZPU0ZadVRtbFNlbWM1VEVaWmVVOVliR2xTTVVVNVRFTjRWRko2YTNwTVJ"
+                            "rWlpVMjEzYzFZeFl6Vk5VM2hSWkhvd09VeElNRDA9LE13PT0sTkE9PSxOUT09LE5nPT0sfQ==");
 
-    // Parse the file-string with the empty signature back into a packed vector
-    packedVect2 = Utils::parseFileString("e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH17fQ==", true);
-    REQUIRE (packedVect2.size() == 8);
-    REQUIRE (packedVect2[0] == "Hello");
-    REQUIRE (packedVect2[1] == "World");
-    REQUIRE (packedVect2[2].empty());
-    REQUIRE (packedVect2[3] == "How");
-    REQUIRE (packedVect2[4] == "Are");
-    REQUIRE (packedVect2[5] == "You");
-    REQUIRE (packedVect2[6] == "?");
-    REQUIRE (packedVect2[2].empty());
+    // Create a new random packed vector including the previous two
+    std::vector<std::string> packedVect3;
+    packedVect3.emplace_back("A");
+    packedVect3.emplace_back("B");
+    packedVect3.emplace_back(fileString2);
+    packedVect3.emplace_back("C");
+    packedVect3.emplace_back(fileString);
 
-    // Parse the file-string without the empty signature back into a packed vector
-    packedVect2 = Utils::parseFileString("e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH17fQ==", false);
-    REQUIRE (packedVect2.size() == 7);
-    REQUIRE (packedVect2[0] == "Hello");
-    REQUIRE (packedVect2[1] == "World");
-    REQUIRE (packedVect2[2].empty());
-    REQUIRE (packedVect2[3] == "How");
-    REQUIRE (packedVect2[4] == "Are");
-    REQUIRE (packedVect2[5] == "You");
-    REQUIRE (packedVect2[6] == "?");
+    // Create a file-string from the given information
+    auto fileString3 = Utils::getFileString(packedVect3);
 
-    // Parse the file-string with the signature back into a packed vector
-    packedVect2 = Utils::parseFileString("e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH17"
-                                              "VTJsbmJtRjBkWEpsfQ==", true);
-    REQUIRE (packedVect2.size() == 8);
-    REQUIRE (packedVect2[0] == "Hello");
-    REQUIRE (packedVect2[1] == "World");
-    REQUIRE (packedVect2[2].empty());
-    REQUIRE (packedVect2[3] == "How");
-    REQUIRE (packedVect2[4] == "Are");
-    REQUIRE (packedVect2[5] == "You");
-    REQUIRE (packedVect2[6] == "?");
-    REQUIRE (packedVect2[7] == "Signature");
+    // Validate the file-string format
+    REQUIRE (fileString3 == "e1FRPT0sUWc9PSxaVEF4VWxCVU1ITlVWMk01VUZONFlWWkZXbEJWTUZwaFpGWlNkR0pHVG14aVY"
+                            "wMHhWa1ZXWVZkdFZsWlBWbXhwVWpKNFZGUldWbFpPVmxKR1ZHcFNWMUpyYnpKWlZFNTNWRlpLY2x"
+                            "kc2NGWk5ha1Y2V1hwR1dtVkdiRFpXYXpWV1RUSm9VMWRyYUhaa01EbFdaVVZzVGxKRVFUbE1SVEV"
+                            "6VUZRd2MxUnJSVGxRVTNoUFZWUXdPVXhGTlc1UVZEQnpabEU5UFE9PSxRdz09LFpURk9TRlp1VG1"
+                            "sU2VtYzVURVpaZVU5WWJHbFNNVVU1VEVONFZGSjZhM3BNUmtaWlUyMTNjMVl4WXpWTlUzaFJaSG9"
+                            "3T1V4SU1EMD0sfQ==");
 
-    // Parse the file-string without the signature back into a packed vector
-    packedVect2 = Utils::parseFileString("e1NHVnNiRzg9LFYyOXliR1E9LCxTRzkzLFFYSmwsV1c5MSxQdz09LH17"
-                                         "VTJsbmJtRjBkWEpsfQ==", false);
-    REQUIRE (packedVect2.size() == 7);
-    REQUIRE (packedVect2[0] == "Hello");
-    REQUIRE (packedVect2[1] == "World");
-    REQUIRE (packedVect2[2].empty());
-    REQUIRE (packedVect2[3] == "How");
-    REQUIRE (packedVect2[4] == "Are");
-    REQUIRE (packedVect2[5] == "You");
-    REQUIRE (packedVect2[6] == "?");
+    // Parse the file-string back into a readable state for the top-level
+    auto packedVectParsed = Utils::parseFileString(fileString3);
+    REQUIRE (packedVectParsed.size() == 5);
+    REQUIRE (packedVectParsed[0] == "A");
+    REQUIRE (packedVectParsed[1] == "B");
+    REQUIRE (packedVectParsed[2] == fileString2);
+    REQUIRE (packedVectParsed[3] == "C");
+    REQUIRE (packedVectParsed[4] == fileString);
+
+    // Parse the file-string back into a readable state for the middle-level
+    packedVectParsed = Utils::parseFileString(fileString2);
+    REQUIRE (packedVectParsed.size() == 7);
+    REQUIRE (packedVectParsed[0] == "1");
+    REQUIRE (packedVectParsed[1] == "2");
+    REQUIRE (packedVectParsed[2] == fileString);
+    REQUIRE (packedVectParsed[3] == "3");
+    REQUIRE (packedVectParsed[4] == "4");
+    REQUIRE (packedVectParsed[5] == "5");
+    REQUIRE (packedVectParsed[6] == "6");
+
+    // Parse the file-string back into a readable state for the bottom-level
+    packedVectParsed = Utils::parseFileString(fileString);
+    REQUIRE (packedVectParsed.size() == 7);
+    REQUIRE (packedVectParsed[0] == "Hello");
+    REQUIRE (packedVectParsed[1] == "World");
+    REQUIRE (packedVectParsed[2].empty());
+    REQUIRE (packedVectParsed[3] == "How");
+    REQUIRE (packedVectParsed[4] == "Are");
+    REQUIRE (packedVectParsed[5] == "You");
+    REQUIRE (packedVectParsed[6] == "?");
 }
 
 TEST_CASE ("Combine String Parts Test", "[UtilsTest]")

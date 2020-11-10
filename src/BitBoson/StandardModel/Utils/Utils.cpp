@@ -71,11 +71,9 @@ std::string Utils::getUUID()
  * Function used to get the file-string representation of a given list/vector of items and a signature
  *
  * @param itemsToPack Vector of strings to pack into the file string
- * @param signature String representing the signature for the object
  * @return String representing the file string for the given items
  */
-std::string Utils::getFileString(const std::vector<std::string>& itemsToPack,
-                                 const std::string& signature)
+std::string Utils::getFileString(const std::vector<std::string>& itemsToPack)
 {
 
     // Create the String to return
@@ -86,47 +84,36 @@ std::string Utils::getFileString(const std::vector<std::string>& itemsToPack,
         fileString += Crypto::base64Encode(item) + ",";
     fileString += "}";
 
-    // Add the signature to the end of the file String
-    fileString += "{" + Crypto::base64Encode(signature) + "}";
-
     // Return the file String (in base 64 encoded format)
     return Crypto::base64Encode(fileString);
 }
 
 /**
  * Function used to parse a given file string into its component items
- * NOTE: The last item represents the signature item (it will be blank if there was no signature)
  *
  * @param fileString FileString representing the object to parse
- * @param includeSignature Boolean indicating whether to include the signature item or not
  * @return Vector fo strings representing the individual items from the file string
  */
-std::vector<std::string> Utils::parseFileString(const std::string& fileString, bool includeSignature)
+std::vector<std::string> Utils::parseFileString(const std::string& fileString)
 {
 
     // Decode the file string (they are base 64 encoded)
     std::string decodedString = Crypto::base64Decode(fileString);
 
     // Extract the file data from the file string
-    std::string fileData = Utils::getStringBetweenSubStrings(decodedString, "{", "}", ParseType::First);
+    std::string fileData = Utils::getStringBetweenSubStrings(decodedString, "{", "}", ParseType::Outer);
     std::vector<std::string> fileDataItems = Utils::splitStringByDelimiter(fileData, ",");
 
     // Decode all of the items in the vector
     for (auto& fileDataItem : fileDataItems)
         fileDataItem = Crypto::base64Decode(fileDataItem);
 
-    // Extract the signature portion from the file string and add to the return vector
-    std::string signature = Utils::getStringBetweenSubStrings(decodedString, "{", "}", ParseType::Last);
-    fileDataItems[fileDataItems.size() - 1] = Crypto::base64Decode(signature);
-
     // If the only item is an empty one, clear the vector
     // This is essentially a correction in the way we process empty strings
     // due to signature addition on the end
     if ((fileDataItems.size() == 1) && (fileDataItems[0].empty()))
         fileDataItems.clear();
-
-    // If the return vector is non-zero in length, strip the signature if desired
-    if (!fileDataItems.empty() && !includeSignature)
+    if ((fileDataItems.size() > 1) && (fileDataItems.back().empty()))
         fileDataItems.pop_back();
 
     // Return the vector of file string components

@@ -326,15 +326,18 @@ std::string Crypto::getPowHash(unsigned long paddedZeros, const std::string& ini
 std::string Crypto::base64Encode(const std::string& stringToEncode, bool urlEncode)
 {
 
+    // Create the return values
+    int index = 0;
+    int inputSize = stringToEncode.size();
+    char ret[inputSize * 4];
+
     // Setup input and variables for encode procedure
-    std::string ret;
     int i = 0;
     int j = 0;
     unsigned char char_array_3[3];
     unsigned char char_array_4[4];
     unsigned long in_len = stringToEncode.size();
     auto bytes_to_encode = stringToEncode.c_str();
-    ret.reserve(stringToEncode.size() * 4);
 
     // Only continue while there is more valid characters to process
     while (in_len--) {
@@ -348,7 +351,7 @@ std::string Crypto::base64Encode(const std::string& stringToEncode, bool urlEnco
             char_array_4[3] = char_array_3[2] & 0x3f;
 
             for(i = 0; (i <4) ; i++)
-                ret.push_back(base64Chars[char_array_4[i]]);
+                ret[index++] = base64Chars[char_array_4[i]];
             i = 0;
         }
     }
@@ -367,23 +370,29 @@ std::string Crypto::base64Encode(const std::string& stringToEncode, bool urlEnco
 
         // Keep track of offsets during the process
         for (j = 0; (j < i + 1); j++)
-            ret.push_back(base64Chars[char_array_4[j]]);
+            ret[index++] = base64Chars[char_array_4[j]];
 
         // Add any required padding
         while((i++ < 3))
-            ret.push_back('=');
+            ret[index++] = '=';
 
     }
 
     // Convert to URL-safe version (if applicable)
     if (urlEncode)
     {
-        std::replace(ret.begin(), ret.end(), '+', '-');
-        std::replace(ret.begin(), ret.end(), '/', '_');
+
+        for (int ii = 0; ii < index; ii++)
+        {
+            if (ret[ii] == '+')
+                ret[ii] = '-';
+            else if (ret[ii] == '/')
+                ret[ii] = '_';
+        }
     }
 
     // Return the converted string
-    return ret;
+    return std::string(ret, index);
 }
 
 /**
@@ -395,14 +404,16 @@ std::string Crypto::base64Encode(const std::string& stringToEncode, bool urlEnco
 std::string Crypto::base64Decode(const std::string& stringToDecode)
 {
 
+    // Create the return values
+    int index = 0;
+    char ret[stringToDecode.size()];
+
     // Setup input and variables for decode procedure
     size_t in_len = stringToDecode.size();
     size_t i = 0;
     size_t j = 0;
     int in_ = 0;
     unsigned char char_array_4[4], char_array_3[3];
-    std::string ret;
-    ret.reserve(stringToDecode.size() / 4);
 
     // Convert from URL-safe version (if applicable)
     std::string tmpStringToDecode = stringToDecode;
@@ -424,7 +435,7 @@ std::string Crypto::base64Decode(const std::string& stringToDecode)
 
             // Keep track of offsets during the process
             for (i = 0; (i < 3); i++)
-                ret.push_back(char_array_3[i]);
+                ret[index++] = char_array_3[i];
             i = 0;
         }
     }
@@ -442,9 +453,10 @@ std::string Crypto::base64Decode(const std::string& stringToDecode)
         char_array_3[2] = ((char_array_4[2] & 0x3) << 6) + char_array_4[3];
 
         // Keep track of offsets during the process
-        for (j = 0; (j < i - 1); j++) ret.push_back(char_array_3[j]);
+        for (j = 0; (j < i - 1); j++)
+            ret[index++] = char_array_3[j];
     }
 
     // Return the converted string
-    return ret;
+    return std::string(ret, index);
 }

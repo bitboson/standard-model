@@ -69,20 +69,17 @@ namespace BitBoson::StandardModel
          * Function used to get the file-string representation of a given list/vector of items and a signature
          *
          * @param itemsToPack Vector of strings to pack into the file string
-         * @param signature String representing the signature for the object
          * @return String representing the file string for the given items
          */
-        std::string getFileString(const std::vector<std::string>& itemsToPack, const std::string& signature="");
+        std::string getFileString(const std::vector<std::string>& itemsToPack);
 
         /**
          * Function used to parse a given file string into its component items
-         * NOTE: The last item represents the signature item (it will be blank if there was no signature)
          *
          * @param fileString FileString representing the object to parse
-         * @param includeSignature Boolean indicating whether to include the signature item or not
          * @return Vector fo strings representing the individual items from the file string
          */
-        std::vector<std::string> parseFileString(const std::string& fileString, bool includeSignature=true);
+        std::vector<std::string> parseFileString(const std::string& fileString);
 
         /**
          * Function used to simply concatenate the given string vector parts

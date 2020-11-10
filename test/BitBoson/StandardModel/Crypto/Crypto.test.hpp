@@ -106,6 +106,11 @@ TEST_CASE ("Test Base 64 Encoding/Decoding", "[CryptoTest]")
     auto testString2 = "Hello~World";
     auto testString3 = "Hello\x7fWorld";
     auto testString4 = "";
+    auto testString5 = "1234567890123456";
+    auto testString6 = "12345678901234567";
+    auto testString7 = "123456789012345678";
+    auto testString8 = "1234567890123456789";
+    auto testString9 = "12345678901234567890";
 
     // Perform all assertions on the encoded/decoded strings
     REQUIRE (Crypto::base64Encode(testString1, false) == "SGVsbG8gV29ybGQ=");
@@ -116,6 +121,16 @@ TEST_CASE ("Test Base 64 Encoding/Decoding", "[CryptoTest]")
     REQUIRE (Crypto::base64Encode(testString3, true) == "SGVsbG9_V29ybGQ=");
     REQUIRE (Crypto::base64Encode(testString4, false).empty());
     REQUIRE (Crypto::base64Encode(testString4, true).empty());
+    REQUIRE (Crypto::base64Encode(testString5, false) == "MTIzNDU2Nzg5MDEyMzQ1Ng==");
+    REQUIRE (Crypto::base64Encode(testString5, true) == "MTIzNDU2Nzg5MDEyMzQ1Ng==");
+    REQUIRE (Crypto::base64Encode(testString6, false) == "MTIzNDU2Nzg5MDEyMzQ1Njc=");
+    REQUIRE (Crypto::base64Encode(testString6, true) == "MTIzNDU2Nzg5MDEyMzQ1Njc=");
+    REQUIRE (Crypto::base64Encode(testString7, false) == "MTIzNDU2Nzg5MDEyMzQ1Njc4");
+    REQUIRE (Crypto::base64Encode(testString7, true) == "MTIzNDU2Nzg5MDEyMzQ1Njc4");
+    REQUIRE (Crypto::base64Encode(testString8, false) == "MTIzNDU2Nzg5MDEyMzQ1Njc4OQ==");
+    REQUIRE (Crypto::base64Encode(testString8, true) == "MTIzNDU2Nzg5MDEyMzQ1Njc4OQ==");
+    REQUIRE (Crypto::base64Encode(testString9, false) == "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=");
+    REQUIRE (Crypto::base64Encode(testString9, true) == "MTIzNDU2Nzg5MDEyMzQ1Njc4OTA=");
     REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString1, false)) == testString1);
     REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString1, true)) == testString1);
     REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString2, false)) == testString2);
@@ -124,6 +139,16 @@ TEST_CASE ("Test Base 64 Encoding/Decoding", "[CryptoTest]")
     REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString3, true)) == testString3);
     REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString4, false)) == testString4);
     REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString4, true)) == testString4);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString5, false)) == testString5);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString5, true)) == testString5);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString6, false)) == testString6);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString6, true)) == testString6);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString7, false)) == testString7);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString7, true)) == testString7);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString8, false)) == testString8);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString8, true)) == testString8);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString9, false)) == testString9);
+    REQUIRE (Crypto::base64Decode(Crypto::base64Encode(testString9, true)) == testString9);
 }
 
 TEST_CASE ("Get BigInt from Hexideciamal Hash", "[CryptoTest]")
