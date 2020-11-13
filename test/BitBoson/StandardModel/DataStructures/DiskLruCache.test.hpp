@@ -29,14 +29,14 @@ using namespace BitBoson::StandardModel;
 class DummyCacheSupplier : public LruCache<std::string>::LruCacheSupplier
 {
     private:
-        std::unordered_map<std::string, std::string> _dataMap;
+        std::unordered_map<std::string, std::shared_ptr<std::string>> _dataMap;
     public:
-        bool addItem(const std::string& key, std::string item) override
+        bool addItem(const std::string& key, std::shared_ptr<std::string> item) override
         { _dataMap[key] = item; return true; }
-        std::string getItem(const std::string& key) override
+        std::shared_ptr<std::string> getItem(const std::string& key) override
         { return _dataMap[key]; }
         bool deleteItem(const std::string& key) override
-        { bool retFlag = !_dataMap[key].empty(); _dataMap.erase(key); return retFlag; }
+        { bool retFlag = (_dataMap.find(key) != _dataMap.end()); _dataMap.erase(key); return retFlag; }
         virtual ~DummyCacheSupplier() = default;
 };
 
@@ -48,28 +48,28 @@ TEST_CASE ("General LRU Cache Operation", "[LruCacheTest]")
     auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 5);
 
     // Add some items to the cache
-    REQUIRE(diskLruCache->addItem("Key0", "Value0"));
-    REQUIRE(diskLruCache->addItem("Key1", "Value1"));
-    REQUIRE(diskLruCache->addItem("Key2", "Value2"));
-    REQUIRE(diskLruCache->addItem("Key3", "Value3"));
-    REQUIRE(diskLruCache->addItem("Key4", "Value4"));
-    REQUIRE(diskLruCache->addItem("Key5", "Value5"));
-    REQUIRE(diskLruCache->addItem("Key6", "Value6"));
-    REQUIRE(diskLruCache->addItem("Key7", "Value7"));
-    REQUIRE(diskLruCache->addItem("Key8", "Value8"));
-    REQUIRE(diskLruCache->addItem("Key9", "Value9"));
+    REQUIRE(diskLruCache->addItem("Key0", std::make_shared<std::string>("Value0")));
+    REQUIRE(diskLruCache->addItem("Key1", std::make_shared<std::string>("Value1")));
+    REQUIRE(diskLruCache->addItem("Key2", std::make_shared<std::string>("Value2")));
+    REQUIRE(diskLruCache->addItem("Key3", std::make_shared<std::string>("Value3")));
+    REQUIRE(diskLruCache->addItem("Key4", std::make_shared<std::string>("Value4")));
+    REQUIRE(diskLruCache->addItem("Key5", std::make_shared<std::string>("Value5")));
+    REQUIRE(diskLruCache->addItem("Key6", std::make_shared<std::string>("Value6")));
+    REQUIRE(diskLruCache->addItem("Key7", std::make_shared<std::string>("Value7")));
+    REQUIRE(diskLruCache->addItem("Key8", std::make_shared<std::string>("Value8")));
+    REQUIRE(diskLruCache->addItem("Key9", std::make_shared<std::string>("Value9")));
 
     // Get all items from the cache
-    REQUIRE(diskLruCache->getItem("Key0") == "Value0");
-    REQUIRE(diskLruCache->getItem("Key1") == "Value1");
-    REQUIRE(diskLruCache->getItem("Key2") == "Value2");
-    REQUIRE(diskLruCache->getItem("Key3") == "Value3");
-    REQUIRE(diskLruCache->getItem("Key4") == "Value4");
-    REQUIRE(diskLruCache->getItem("Key5") == "Value5");
-    REQUIRE(diskLruCache->getItem("Key6") == "Value6");
-    REQUIRE(diskLruCache->getItem("Key7") == "Value7");
-    REQUIRE(diskLruCache->getItem("Key8") == "Value8");
-    REQUIRE(diskLruCache->getItem("Key9") == "Value9");
+    REQUIRE(*diskLruCache->getItem("Key0").get() == "Value0");
+    REQUIRE(*diskLruCache->getItem("Key1").get() == "Value1");
+    REQUIRE(*diskLruCache->getItem("Key2").get() == "Value2");
+    REQUIRE(*diskLruCache->getItem("Key3").get() == "Value3");
+    REQUIRE(*diskLruCache->getItem("Key4").get() == "Value4");
+    REQUIRE(*diskLruCache->getItem("Key5").get() == "Value5");
+    REQUIRE(*diskLruCache->getItem("Key6").get() == "Value6");
+    REQUIRE(*diskLruCache->getItem("Key7").get() == "Value7");
+    REQUIRE(*diskLruCache->getItem("Key8").get() == "Value8");
+    REQUIRE(*diskLruCache->getItem("Key9").get() == "Value9");
 
     // Delete some items from the cache
     REQUIRE(diskLruCache->deleteItem("Key0"));
@@ -84,16 +84,16 @@ TEST_CASE ("General LRU Cache Operation", "[LruCacheTest]")
     REQUIRE(!diskLruCache->deleteItem("Key8"));
 
     // Verify that the correct items were deleted
-    REQUIRE(diskLruCache->getItem("Key0").empty());
-    REQUIRE(diskLruCache->getItem("Key1").empty());
-    REQUIRE(diskLruCache->getItem("Key2") == "Value2");
-    REQUIRE(diskLruCache->getItem("Key3") == "Value3");
-    REQUIRE(diskLruCache->getItem("Key4") == "Value4");
-    REQUIRE(diskLruCache->getItem("Key5").empty());
-    REQUIRE(diskLruCache->getItem("Key6") == "Value6");
-    REQUIRE(diskLruCache->getItem("Key7").empty());
-    REQUIRE(diskLruCache->getItem("Key8").empty());
-    REQUIRE(diskLruCache->getItem("Key9") == "Value9");
+    REQUIRE(diskLruCache->getItem("Key0") == nullptr);
+    REQUIRE(diskLruCache->getItem("Key1") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key2").get() == "Value2");
+    REQUIRE(*diskLruCache->getItem("Key3").get() == "Value3");
+    REQUIRE(*diskLruCache->getItem("Key4").get() == "Value4");
+    REQUIRE(diskLruCache->getItem("Key5") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key6").get() == "Value6");
+    REQUIRE(diskLruCache->getItem("Key7") == nullptr);
+    REQUIRE(diskLruCache->getItem("Key8") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key9").get() == "Value9");
 }
 
 TEST_CASE ("LRU Cache Write-Back Test", "[LruCacheTest]")
@@ -104,51 +104,51 @@ TEST_CASE ("LRU Cache Write-Back Test", "[LruCacheTest]")
     auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 5);
 
     // Add some items to the cache
-    REQUIRE(diskLruCache->addItem("Key0", "Value0"));
-    REQUIRE(diskLruCache->addItem("Key1", "Value1", false));
-    REQUIRE(diskLruCache->addItem("Key2", "Value2", true));
-    REQUIRE(diskLruCache->addItem("Key3", "Value3", true));
+    REQUIRE(diskLruCache->addItem("Key0", std::make_shared<std::string>("Value0")));
+    REQUIRE(diskLruCache->addItem("Key1", std::make_shared<std::string>("Value1"), false));
+    REQUIRE(diskLruCache->addItem("Key2", std::make_shared<std::string>("Value2"), true));
+    REQUIRE(diskLruCache->addItem("Key3", std::make_shared<std::string>("Value3"), true));
 
     // Check the expected write-back items
-    REQUIRE(cacheSupplier->getItem("Key0").empty());
-    REQUIRE(cacheSupplier->getItem("Key1").empty());
-    REQUIRE(cacheSupplier->getItem("Key2") == "Value2");
-    REQUIRE(cacheSupplier->getItem("Key3") == "Value3");
+    REQUIRE(cacheSupplier->getItem("Key0") == nullptr);
+    REQUIRE(cacheSupplier->getItem("Key1") == nullptr);
+    REQUIRE(*cacheSupplier->getItem("Key2").get() == "Value2");
+    REQUIRE(*cacheSupplier->getItem("Key3").get() == "Value3");
 
     // Add enough items to force the first two values to be written back
-    REQUIRE(diskLruCache->addItem("Key4", "Value4"));
-    REQUIRE(diskLruCache->addItem("Key5", "Value5"));
-    REQUIRE(diskLruCache->addItem("Key6", "Value6"));
-    REQUIRE(diskLruCache->addItem("Key7", "Value7"));
-    REQUIRE(diskLruCache->addItem("Key8", "Value8"));
-    REQUIRE(diskLruCache->addItem("Key9", "Value9"));
+    REQUIRE(diskLruCache->addItem("Key4", std::make_shared<std::string>("Value4")));
+    REQUIRE(diskLruCache->addItem("Key5", std::make_shared<std::string>("Value5")));
+    REQUIRE(diskLruCache->addItem("Key6", std::make_shared<std::string>("Value6")));
+    REQUIRE(diskLruCache->addItem("Key7", std::make_shared<std::string>("Value7")));
+    REQUIRE(diskLruCache->addItem("Key8", std::make_shared<std::string>("Value8")));
+    REQUIRE(diskLruCache->addItem("Key9", std::make_shared<std::string>("Value9")));
 
     // Check the expected write-back items
-    REQUIRE(cacheSupplier->getItem("Key0") == "Value0");
-    REQUIRE(cacheSupplier->getItem("Key1") == "Value1");
-    REQUIRE(cacheSupplier->getItem("Key2") == "Value2");
-    REQUIRE(cacheSupplier->getItem("Key3") == "Value3");
-    REQUIRE(cacheSupplier->getItem("Key4") == "Value4");
-    REQUIRE(cacheSupplier->getItem("Key5").empty());
-    REQUIRE(cacheSupplier->getItem("Key6").empty());
-    REQUIRE(cacheSupplier->getItem("Key7").empty());
-    REQUIRE(cacheSupplier->getItem("Key8").empty());
-    REQUIRE(cacheSupplier->getItem("Key9").empty());
+    REQUIRE(*cacheSupplier->getItem("Key0").get() == "Value0");
+    REQUIRE(*cacheSupplier->getItem("Key1").get() == "Value1");
+    REQUIRE(*cacheSupplier->getItem("Key2").get() == "Value2");
+    REQUIRE(*cacheSupplier->getItem("Key3").get() == "Value3");
+    REQUIRE(*cacheSupplier->getItem("Key4").get() == "Value4");
+    REQUIRE(cacheSupplier->getItem("Key5") == nullptr);
+    REQUIRE(cacheSupplier->getItem("Key6") == nullptr);
+    REQUIRE(cacheSupplier->getItem("Key7") == nullptr);
+    REQUIRE(cacheSupplier->getItem("Key8") == nullptr);
+    REQUIRE(cacheSupplier->getItem("Key9") == nullptr);
 
     // Write the remaining items back now
     REQUIRE(diskLruCache->writeAllBackNow());
 
     // Check the expected write-back items
-    REQUIRE(cacheSupplier->getItem("Key0") == "Value0");
-    REQUIRE(cacheSupplier->getItem("Key1") == "Value1");
-    REQUIRE(cacheSupplier->getItem("Key2") == "Value2");
-    REQUIRE(cacheSupplier->getItem("Key3") == "Value3");
-    REQUIRE(cacheSupplier->getItem("Key4") == "Value4");
-    REQUIRE(cacheSupplier->getItem("Key5") == "Value5");
-    REQUIRE(cacheSupplier->getItem("Key6") == "Value6");
-    REQUIRE(cacheSupplier->getItem("Key7") == "Value7");
-    REQUIRE(cacheSupplier->getItem("Key8") == "Value8");
-    REQUIRE(cacheSupplier->getItem("Key9") == "Value9");
+    REQUIRE(*cacheSupplier->getItem("Key0").get() == "Value0");
+    REQUIRE(*cacheSupplier->getItem("Key1").get() == "Value1");
+    REQUIRE(*cacheSupplier->getItem("Key2").get() == "Value2");
+    REQUIRE(*cacheSupplier->getItem("Key3").get() == "Value3");
+    REQUIRE(*cacheSupplier->getItem("Key4").get() == "Value4");
+    REQUIRE(*cacheSupplier->getItem("Key5").get() == "Value5");
+    REQUIRE(*cacheSupplier->getItem("Key6").get() == "Value6");
+    REQUIRE(*cacheSupplier->getItem("Key7").get() == "Value7");
+    REQUIRE(*cacheSupplier->getItem("Key8").get() == "Value8");
+    REQUIRE(*cacheSupplier->getItem("Key9").get() == "Value9");
 
     // Delete some items from the cache
     REQUIRE(diskLruCache->deleteItem("Key0"));
@@ -163,31 +163,31 @@ TEST_CASE ("LRU Cache Write-Back Test", "[LruCacheTest]")
     REQUIRE(!diskLruCache->deleteItem("Key8"));
 
     // Verify that the correct items were deleted
-    REQUIRE(diskLruCache->getItem("Key0").empty());
-    REQUIRE(diskLruCache->getItem("Key1").empty());
-    REQUIRE(diskLruCache->getItem("Key2") == "Value2");
-    REQUIRE(diskLruCache->getItem("Key3") == "Value3");
-    REQUIRE(diskLruCache->getItem("Key4") == "Value4");
-    REQUIRE(diskLruCache->getItem("Key5").empty());
-    REQUIRE(diskLruCache->getItem("Key6") == "Value6");
-    REQUIRE(diskLruCache->getItem("Key7").empty());
-    REQUIRE(diskLruCache->getItem("Key8").empty());
-    REQUIRE(diskLruCache->getItem("Key9") == "Value9");
+    REQUIRE(diskLruCache->getItem("Key0") == nullptr);
+    REQUIRE(diskLruCache->getItem("Key1") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key2").get() == "Value2");
+    REQUIRE(*diskLruCache->getItem("Key3").get() == "Value3");
+    REQUIRE(*diskLruCache->getItem("Key4").get() == "Value4");
+    REQUIRE(diskLruCache->getItem("Key5") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key6").get() == "Value6");
+    REQUIRE(diskLruCache->getItem("Key7") == nullptr);
+    REQUIRE(diskLruCache->getItem("Key8") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key9").get() == "Value9");
 
     // Write the remaining items back now
     REQUIRE(diskLruCache->writeAllBackNow());
 
     // Verify the same items are deleted after write-back
-    REQUIRE(diskLruCache->getItem("Key0").empty());
-    REQUIRE(diskLruCache->getItem("Key1").empty());
-    REQUIRE(diskLruCache->getItem("Key2") == "Value2");
-    REQUIRE(diskLruCache->getItem("Key3") == "Value3");
-    REQUIRE(diskLruCache->getItem("Key4") == "Value4");
-    REQUIRE(diskLruCache->getItem("Key5").empty());
-    REQUIRE(diskLruCache->getItem("Key6") == "Value6");
-    REQUIRE(diskLruCache->getItem("Key7").empty());
-    REQUIRE(diskLruCache->getItem("Key8").empty());
-    REQUIRE(diskLruCache->getItem("Key9") == "Value9");
+    REQUIRE(diskLruCache->getItem("Key0") == nullptr);
+    REQUIRE(diskLruCache->getItem("Key1") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key2").get() == "Value2");
+    REQUIRE(*diskLruCache->getItem("Key3").get() == "Value3");
+    REQUIRE(*diskLruCache->getItem("Key4").get() == "Value4");
+    REQUIRE(diskLruCache->getItem("Key5") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key6").get() == "Value6");
+    REQUIRE(diskLruCache->getItem("Key7") == nullptr);
+    REQUIRE(diskLruCache->getItem("Key8") == nullptr);
+    REQUIRE(*diskLruCache->getItem("Key9").get() == "Value9");
 }
 
 TEST_CASE ("Add Duplicate Items LRU Cache Operation", "[LruCacheTest]")
@@ -198,33 +198,33 @@ TEST_CASE ("Add Duplicate Items LRU Cache Operation", "[LruCacheTest]")
     auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 5);
 
     // Add some items to the cache (enough to force write-back)
-    REQUIRE(diskLruCache->addItem("Key0", "Value0"));
-    REQUIRE(diskLruCache->addItem("Key1", "Value1"));
-    REQUIRE(diskLruCache->addItem("Key2", "Value2"));
-    REQUIRE(diskLruCache->addItem("Key3", "Value3"));
-    REQUIRE(diskLruCache->addItem("Key4", "Value4"));
-    REQUIRE(diskLruCache->addItem("Key5", "Value5"));
-    REQUIRE(diskLruCache->addItem("Key6", "Value6"));
-    REQUIRE(diskLruCache->addItem("Key7", "Value7"));
-    REQUIRE(diskLruCache->addItem("Key8", "Value8"));
-    REQUIRE(diskLruCache->addItem("Key9", "Value9"));
+    REQUIRE(diskLruCache->addItem("Key0", std::make_shared<std::string>("Value0")));
+    REQUIRE(diskLruCache->addItem("Key1", std::make_shared<std::string>("Value1")));
+    REQUIRE(diskLruCache->addItem("Key2", std::make_shared<std::string>("Value2")));
+    REQUIRE(diskLruCache->addItem("Key3", std::make_shared<std::string>("Value3")));
+    REQUIRE(diskLruCache->addItem("Key4", std::make_shared<std::string>("Value4")));
+    REQUIRE(diskLruCache->addItem("Key5", std::make_shared<std::string>("Value5")));
+    REQUIRE(diskLruCache->addItem("Key6", std::make_shared<std::string>("Value6")));
+    REQUIRE(diskLruCache->addItem("Key7", std::make_shared<std::string>("Value7")));
+    REQUIRE(diskLruCache->addItem("Key8", std::make_shared<std::string>("Value8")));
+    REQUIRE(diskLruCache->addItem("Key9", std::make_shared<std::string>("Value9")));
 
     // Overwrite some items
-    REQUIRE(diskLruCache->addItem("Key9", "NewValue9"));
-    REQUIRE(diskLruCache->addItem("Key0", "NewValue0"));
-    REQUIRE(diskLruCache->addItem("Key5", "NewValue5", true));
+    REQUIRE(diskLruCache->addItem("Key9", std::make_shared<std::string>("NewValue9")));
+    REQUIRE(diskLruCache->addItem("Key0", std::make_shared<std::string>("NewValue0")));
+    REQUIRE(diskLruCache->addItem("Key5", std::make_shared<std::string>("NewValue5"), true));
 
     // Get all items from the cache
-    REQUIRE(diskLruCache->getItem("Key0") == "NewValue0");
-    REQUIRE(diskLruCache->getItem("Key1") == "Value1");
-    REQUIRE(diskLruCache->getItem("Key2") == "Value2");
-    REQUIRE(diskLruCache->getItem("Key3") == "Value3");
-    REQUIRE(diskLruCache->getItem("Key4") == "Value4");
-    REQUIRE(diskLruCache->getItem("Key5") == "NewValue5");
-    REQUIRE(diskLruCache->getItem("Key6") == "Value6");
-    REQUIRE(diskLruCache->getItem("Key7") == "Value7");
-    REQUIRE(diskLruCache->getItem("Key8") == "Value8");
-    REQUIRE(diskLruCache->getItem("Key9") == "NewValue9");
+    REQUIRE(*diskLruCache->getItem("Key0").get() == "NewValue0");
+    REQUIRE(*diskLruCache->getItem("Key1").get() == "Value1");
+    REQUIRE(*diskLruCache->getItem("Key2").get() == "Value2");
+    REQUIRE(*diskLruCache->getItem("Key3").get() == "Value3");
+    REQUIRE(*diskLruCache->getItem("Key4").get() == "Value4");
+    REQUIRE(*diskLruCache->getItem("Key5").get() == "NewValue5");
+    REQUIRE(*diskLruCache->getItem("Key6").get() == "Value6");
+    REQUIRE(*diskLruCache->getItem("Key7").get() == "Value7");
+    REQUIRE(*diskLruCache->getItem("Key8").get() == "Value8");
+    REQUIRE(*diskLruCache->getItem("Key9").get() == "NewValue9");
 }
 
 TEST_CASE ("Very-Small LRU Cache Operation", "[LruCacheTest]")
@@ -235,28 +235,28 @@ TEST_CASE ("Very-Small LRU Cache Operation", "[LruCacheTest]")
     auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 1);
 
     // Add some items to the cache
-    REQUIRE(diskLruCache->addItem("Key0", "Value0"));
-    REQUIRE(diskLruCache->addItem("Key1", "Value1"));
-    REQUIRE(diskLruCache->addItem("Key2", "Value2"));
-    REQUIRE(diskLruCache->addItem("Key3", "Value3"));
-    REQUIRE(diskLruCache->addItem("Key4", "Value4"));
-    REQUIRE(diskLruCache->addItem("Key5", "Value5"));
-    REQUIRE(diskLruCache->addItem("Key6", "Value6"));
-    REQUIRE(diskLruCache->addItem("Key7", "Value7"));
-    REQUIRE(diskLruCache->addItem("Key8", "Value8"));
-    REQUIRE(diskLruCache->addItem("Key9", "Value9"));
+    REQUIRE(diskLruCache->addItem("Key0", std::make_shared<std::string>("Value0")));
+    REQUIRE(diskLruCache->addItem("Key1", std::make_shared<std::string>("Value1")));
+    REQUIRE(diskLruCache->addItem("Key2", std::make_shared<std::string>("Value2")));
+    REQUIRE(diskLruCache->addItem("Key3", std::make_shared<std::string>("Value3")));
+    REQUIRE(diskLruCache->addItem("Key4", std::make_shared<std::string>("Value4")));
+    REQUIRE(diskLruCache->addItem("Key5", std::make_shared<std::string>("Value5")));
+    REQUIRE(diskLruCache->addItem("Key6", std::make_shared<std::string>("Value6")));
+    REQUIRE(diskLruCache->addItem("Key7", std::make_shared<std::string>("Value7")));
+    REQUIRE(diskLruCache->addItem("Key8", std::make_shared<std::string>("Value8")));
+    REQUIRE(diskLruCache->addItem("Key9", std::make_shared<std::string>("Value9")));
 
     // Get all items from the cache
-    REQUIRE(diskLruCache->getItem("Key0") == "Value0");
-    REQUIRE(diskLruCache->getItem("Key1") == "Value1");
-    REQUIRE(diskLruCache->getItem("Key2") == "Value2");
-    REQUIRE(diskLruCache->getItem("Key3") == "Value3");
-    REQUIRE(diskLruCache->getItem("Key4") == "Value4");
-    REQUIRE(diskLruCache->getItem("Key5") == "Value5");
-    REQUIRE(diskLruCache->getItem("Key6") == "Value6");
-    REQUIRE(diskLruCache->getItem("Key7") == "Value7");
-    REQUIRE(diskLruCache->getItem("Key8") == "Value8");
-    REQUIRE(diskLruCache->getItem("Key9") == "Value9");
+    REQUIRE(*diskLruCache->getItem("Key0").get() == "Value0");
+    REQUIRE(*diskLruCache->getItem("Key1").get() == "Value1");
+    REQUIRE(*diskLruCache->getItem("Key2").get() == "Value2");
+    REQUIRE(*diskLruCache->getItem("Key3").get() == "Value3");
+    REQUIRE(*diskLruCache->getItem("Key4").get() == "Value4");
+    REQUIRE(*diskLruCache->getItem("Key5").get() == "Value5");
+    REQUIRE(*diskLruCache->getItem("Key6").get() == "Value6");
+    REQUIRE(*diskLruCache->getItem("Key7").get() == "Value7");
+    REQUIRE(*diskLruCache->getItem("Key8").get() == "Value8");
+    REQUIRE(*diskLruCache->getItem("Key9").get() == "Value9");
 }
 
 TEST_CASE ("Very-Large LRU Cache Operation", "[LruCacheTest]")
@@ -267,28 +267,28 @@ TEST_CASE ("Very-Large LRU Cache Operation", "[LruCacheTest]")
     auto diskLruCache = std::make_shared<LruCache<std::string>>(cacheSupplier, 1024);
 
     // Add some items to the cache
-    REQUIRE(diskLruCache->addItem("Key0", "Value0"));
-    REQUIRE(diskLruCache->addItem("Key1", "Value1"));
-    REQUIRE(diskLruCache->addItem("Key2", "Value2"));
-    REQUIRE(diskLruCache->addItem("Key3", "Value3"));
-    REQUIRE(diskLruCache->addItem("Key4", "Value4"));
-    REQUIRE(diskLruCache->addItem("Key5", "Value5"));
-    REQUIRE(diskLruCache->addItem("Key6", "Value6"));
-    REQUIRE(diskLruCache->addItem("Key7", "Value7"));
-    REQUIRE(diskLruCache->addItem("Key8", "Value8"));
-    REQUIRE(diskLruCache->addItem("Key9", "Value9"));
+    REQUIRE(diskLruCache->addItem("Key0", std::make_shared<std::string>("Value0")));
+    REQUIRE(diskLruCache->addItem("Key1", std::make_shared<std::string>("Value1")));
+    REQUIRE(diskLruCache->addItem("Key2", std::make_shared<std::string>("Value2")));
+    REQUIRE(diskLruCache->addItem("Key3", std::make_shared<std::string>("Value3")));
+    REQUIRE(diskLruCache->addItem("Key4", std::make_shared<std::string>("Value4")));
+    REQUIRE(diskLruCache->addItem("Key5", std::make_shared<std::string>("Value5")));
+    REQUIRE(diskLruCache->addItem("Key6", std::make_shared<std::string>("Value6")));
+    REQUIRE(diskLruCache->addItem("Key7", std::make_shared<std::string>("Value7")));
+    REQUIRE(diskLruCache->addItem("Key8", std::make_shared<std::string>("Value8")));
+    REQUIRE(diskLruCache->addItem("Key9", std::make_shared<std::string>("Value9")));
 
     // Get all items from the cache
-    REQUIRE(diskLruCache->getItem("Key0") == "Value0");
-    REQUIRE(diskLruCache->getItem("Key1") == "Value1");
-    REQUIRE(diskLruCache->getItem("Key2") == "Value2");
-    REQUIRE(diskLruCache->getItem("Key3") == "Value3");
-    REQUIRE(diskLruCache->getItem("Key4") == "Value4");
-    REQUIRE(diskLruCache->getItem("Key5") == "Value5");
-    REQUIRE(diskLruCache->getItem("Key6") == "Value6");
-    REQUIRE(diskLruCache->getItem("Key7") == "Value7");
-    REQUIRE(diskLruCache->getItem("Key8") == "Value8");
-    REQUIRE(diskLruCache->getItem("Key9") == "Value9");
+    REQUIRE(*diskLruCache->getItem("Key0").get() == "Value0");
+    REQUIRE(*diskLruCache->getItem("Key1").get() == "Value1");
+    REQUIRE(*diskLruCache->getItem("Key2").get() == "Value2");
+    REQUIRE(*diskLruCache->getItem("Key3").get() == "Value3");
+    REQUIRE(*diskLruCache->getItem("Key4").get() == "Value4");
+    REQUIRE(*diskLruCache->getItem("Key5").get() == "Value5");
+    REQUIRE(*diskLruCache->getItem("Key6").get() == "Value6");
+    REQUIRE(*diskLruCache->getItem("Key7").get() == "Value7");
+    REQUIRE(*diskLruCache->getItem("Key8").get() == "Value8");
+    REQUIRE(*diskLruCache->getItem("Key9").get() == "Value9");
 }
 
 #endif //BITBOSON_STANDARDMODEL_LRUCACHE_TEST_HPP

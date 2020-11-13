@@ -24,6 +24,7 @@
 
 #include <BitBoson/StandardModel/Crypto/Crypto.h>
 #include <BitBoson/StandardModel/DataStructures/Cacheable.hpp>
+#include <BitBoson/StandardModel/Crypto/DigitalSignatures/DigitalSignatureKeyPair.hpp>
 
 namespace BitBoson::StandardModel
 {
@@ -33,6 +34,7 @@ namespace BitBoson::StandardModel
 
         // Private member variables
         private:
+            DigitalSignatureKeyPair::KeyTypes _keyType;
             std::string _signature;
 
         // Public member functions
@@ -41,7 +43,12 @@ namespace BitBoson::StandardModel
             /**
              * Default constructor used to setup the class
              */
-             Signable() = default;
+             Signable()
+             {
+
+                // Setup default member variable values
+                _keyType = DigitalSignatureKeyPair::KeyTypes::NONE;
+             }
 
             /**
              * Copy constructor used to setup the class from another
@@ -50,6 +57,7 @@ namespace BitBoson::StandardModel
              */
             Signable(const Signable& signable)
             {
+                _keyType = signable._keyType;
                 _signature = signable._signature;
             }
 
@@ -64,13 +72,14 @@ namespace BitBoson::StandardModel
             }
 
             /**
-             * Virtual function used to sign the object using the given key
+             * Virtual function used to sign the object using the given key-pair information
              *
-             * @param privateKey Base64 string representation of the private key
+             * @param keyPair DigitalSignatureKeyPair representing the signing key-pair
              */
-            virtual void sign(const std::string& privateKey)
+            virtual void sign(std::shared_ptr<DigitalSignatureKeyPair> keyPair)
             {
-                setSignature(Crypto::getSignature(getUniqueHash(), privateKey));
+                _keyType = keyPair->getKeyType();
+                setSignature(keyPair->sign(getUniqueHash()));
             }
 
             /**
@@ -81,7 +90,8 @@ namespace BitBoson::StandardModel
              */
             virtual bool isValid(const std::string& publicKey) const
             {
-                return Crypto::verifySignedMessage(getUniqueHash(), _signature, publicKey);
+                auto pubKey = Crypto::getPublicKey(_keyType, publicKey);
+                return ((pubKey == nullptr) ? false : pubKey->isValid(getUniqueHash(), _signature));
             }
 
             /**
@@ -92,6 +102,16 @@ namespace BitBoson::StandardModel
             virtual std::string getSignature() const
             {
                 return _signature;
+            }
+
+            /**
+             * Virtual function used to get the key-type for the signed object
+             *
+             * @return KeyTypes representing the key-type for the signed object
+             */
+            virtual DigitalSignatureKeyPair::KeyTypes getKeyType() const
+            {
+                return _keyType;
             }
 
             /**

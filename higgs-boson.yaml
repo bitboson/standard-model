@@ -130,3 +130,13 @@ dependencies:
         - libargon2.so.1
       include:
         - include/
+
+  # Setup the external dependency: yas
+  - name: yas
+    source: git
+    url: git://github.com/bitboson-deps/yas.git
+    rev: 7.0.5
+    type: manual
+    target default:
+      include:
+        - include/

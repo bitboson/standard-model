@@ -71,38 +71,38 @@ class DummySignable : public Signable
 TEST_CASE ("Generic Signable Test", "[SignableTest]")
 {
     // Create a new key-pair
-    auto keyPair = Crypto::getWinternitzKeyPair();
+    auto keyPair = Crypto::getKeyPair(DigitalSignatureKeyPair::KeyTypes::WINTERNITZ);
 
     // Create a new dummy-signable instance and sign it
     DummySignable newSignable;
-    newSignable.sign(keyPair.privateKey);
+    newSignable.sign(keyPair);
 
     // Verify the signature
-    REQUIRE(newSignable.isValid(keyPair.publicKey));
+    REQUIRE(newSignable.isValid(keyPair->getPublicKey()));
 
     // Verify we can copy the signable
     auto signable2 = newSignable;
-    REQUIRE(signable2.isValid(keyPair.publicKey));
+    REQUIRE(signable2.isValid(keyPair->getPublicKey()));
 
     // Verify we can copy the signable
     DummySignable signable3(newSignable);
-    REQUIRE(signable3.isValid(keyPair.publicKey));
+    REQUIRE(signable3.isValid(keyPair->getPublicKey()));
 }
 
 TEST_CASE ("Compare Signables Test", "[SignableTest]")
 {
     // Create two new key-pair
-    auto keyPair1 = Crypto::getWinternitzKeyPair();
-    auto keyPair2 = Crypto::getWinternitzKeyPair();
+    auto keyPair1 = Crypto::getKeyPair(DigitalSignatureKeyPair::KeyTypes::WINTERNITZ);
+    auto keyPair2 = Crypto::getKeyPair(DigitalSignatureKeyPair::KeyTypes::WINTERNITZ);
 
     // Create a new dummy-signable instance and sign it
     DummySignable newSignable1;
-    newSignable1.sign(keyPair1.privateKey);
+    newSignable1.sign(keyPair1);
 
     // Create another new dummy-signable instance and sign it
     // with the second key-pair this time
     DummySignable newSignable2;
-    newSignable2.sign(keyPair2.privateKey);
+    newSignable2.sign(keyPair2);
 
     // Verify that the two signatures are different
     REQUIRE (newSignable1.getSignature() != newSignable2.getSignature());
@@ -110,7 +110,7 @@ TEST_CASE ("Compare Signables Test", "[SignableTest]")
     // Create another new dummy-signable instance and sign it
     // with the first key-pair this time
     DummySignable newSignable3;
-    newSignable3.sign(keyPair1.privateKey);
+    newSignable3.sign(keyPair1);
 
     // Verify that the signatures match up as expected
     REQUIRE (newSignable1.getSignature() == newSignable3.getSignature());

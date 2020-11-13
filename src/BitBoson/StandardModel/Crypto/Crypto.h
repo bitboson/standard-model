@@ -24,19 +24,13 @@
 
 #include <string>
 #include <BitBoson/StandardModel/Primitives/BigInt.hpp>
+#include <BitBoson/StandardModel/Crypto/DigitalSignatures/DigitalSignatureKeyPair.hpp>
 
 namespace BitBoson::StandardModel
 {
 
     namespace Crypto
     {
-
-        // Define a structure for holding Winternitz Key-Pairs
-        struct WinternitzKeyPair
-        {
-            std::string publicKey;
-            std::string privateKey;
-        };
 
         /**
          * Function used to get the number of leading zeros a hash begins with
@@ -47,33 +41,24 @@ namespace BitBoson::StandardModel
         unsigned long getNumberOfLeadingZerosInHash(const std::string& hash);
 
         /**
-         * Function used to get a public-private key-pair using the Winternitz one-time method for digital signatures
+         * Function used to get a public-private key-pair for the provided type
          *
-         * @return WinternitzKeyPair representing the private-public key-pair
+         * @param keyType KeyTypes representing the key-pair type
+         * @return KeyPair representing the private-public key-pair
          */
-        WinternitzKeyPair getWinternitzKeyPair();
+        std::shared_ptr<DigitalSignatureKeyPair> getKeyPair(
+                DigitalSignatureKeyPair::KeyTypes keyType);
 
         /**
-         * Function used to get the hex-representation (as a string) of the given message given a private key
+         * Function used to get a public key-pair object for the provided type
+         * NOTE: This returns a key-pair with NO private key (just the public one)
          *
-         * @param message String representing the message to sign
-         * @param privateWinternitzKey DSA Private key representing the key to sign the message with
-         * @return String representing the signature of the message (in hex format) for the given private key
+         * @param keyType KeyTypes representing the key-pair type
+         * @param publicKey String representing the public key to use
+         * @return KeyPair representing the private-public key-pair
          */
-        std::string getSignature(const std::string& message, const std::string& privateWinternitzKey);
-
-        /**
-         * Function used to verify the signature of a message using a given the base64 string representation
-         * for the underlying public key
-         *
-         * @param message String representing the message associated with the signature
-         * @param signature String representing the signature (in hex format) associated with the message
-         * @param publicWinternitzKey Base64 string representation of the public key used to verify the
-         *                         message-signature pair against
-         * @return Boolean indicating whether the message-signature pair is valid (true) or not (false)
-         */
-        bool verifySignedMessage(const std::string& message, const std::string& signature,
-                const std::string& publicWinternitzKey);
+        std::shared_ptr<DigitalSignatureKeyPair> getPublicKey(
+                DigitalSignatureKeyPair::KeyTypes keyType, const std::string& publicKey);
 
         /**
          * Function used to get the integer (BigInt) representation of the given hexadecimal hash value
@@ -95,9 +80,11 @@ namespace BitBoson::StandardModel
          * Function used to get the SHA256 hash of the given string in a hex format
          *
          * @param data String to get the hash of
+         * @param toUpper Boolean indicating whether the output should be upper-case
+         * @param getBytes Boolean indicating whether to return bytes instead of hex
          * @return String representing the hashed value (in hex format) of the given data
          */
-        std::string sha256(const std::string& data);
+        std::string sha256(const std::string& data, bool toUpper=true, bool getBytes=false);
 
         /**
          * Function used to get a random SHA256 hash
@@ -135,6 +122,14 @@ namespace BitBoson::StandardModel
          * @return String representing the decoded string
          */
         std::string base64Decode(const std::string& stringToDecode);
+
+        /**
+         * Function used to convert the supplied string from hexidecimal to binary
+         *
+         * @param stringToDecode String representing the base-64 string to decode
+         * @return String representing the decoded string
+         */
+        std::string hexToBinary(const std::string& hexString);
     };
 }
 

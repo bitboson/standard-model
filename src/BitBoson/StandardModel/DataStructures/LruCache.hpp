@@ -47,7 +47,7 @@ namespace BitBoson::StandardModel
                      * @param item Generic (T) Data item to add to the data store
                      * @return Boolean indicating whether the item was added or not
                      */
-                    virtual bool addItem(const std::string& key, T item) = 0;
+                    virtual bool addItem(const std::string& key, std::shared_ptr<T> item) = 0;
 
                     /**
                      * Virtual function used to get the value for the given key from the supplier
@@ -55,7 +55,7 @@ namespace BitBoson::StandardModel
                      * @param key String representing the key for the item to get
                      * @return Generic (T) Data representing the value for the given key
                      */
-                    virtual T getItem(const std::string& key) = 0;
+                    virtual std::shared_ptr<T> getItem(const std::string& key) = 0;
 
                     /**
                      * Virtual function used to remove the value for the given key from the supplier
@@ -77,7 +77,7 @@ namespace BitBoson::StandardModel
             struct CacheNode
             {
                 std::string key;
-                T val;
+                std::shared_ptr<T> val;
                 CacheNode* prev;
                 CacheNode* next;
             };
@@ -122,7 +122,7 @@ namespace BitBoson::StandardModel
              * @param writeBack Boolean indicating to write back the item to the supplier now
              * @return Boolean indicating whether the item was added or not
              */
-            bool addItem(const std::string& key, T item, bool writeBack=false)
+            bool addItem(const std::string& key, std::shared_ptr<T> item, bool writeBack=false)
             {
 
                 // Create a return flag
@@ -205,11 +205,11 @@ namespace BitBoson::StandardModel
              * @param key String representing the key for the item to get
              * @return Generic (T) Data representing the value for the given key
              */
-            T getItem(const std::string& key)
+            std::shared_ptr<T> getItem(const std::string& key)
             {
 
                 // Create a return value
-                T retVal = T();
+                std::shared_ptr<T> retVal = nullptr;
 
                 // Only continue if the key is valid
                 if (!key.empty())
@@ -239,7 +239,7 @@ namespace BitBoson::StandardModel
 
                     // If we had to get the node from the supplier then
                     // add it back to the cache and update it accordingly
-                    if ((mapVal == nullptr) && (!retVal.empty()))
+                    if ((mapVal == nullptr) && (retVal != nullptr))
                         addItem(key, retVal);
                 }
 

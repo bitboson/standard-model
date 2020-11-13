@@ -19,6 +19,10 @@
  *     - Tyler Parcell <OriginLegend>
  */
 
+#include <yas/mem_streams.hpp>
+#include <yas/binary_iarchive.hpp>
+#include <yas/binary_oarchive.hpp>
+#include <yas/std_types.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/uuid/uuid.hpp>
 #include <boost/uuid/uuid_io.hpp>
@@ -76,16 +80,37 @@ std::string Utils::getUUID()
 std::string Utils::getFileString(const std::vector<std::string>& itemsToPack)
 {
 
-    // Create the String to return
-    std::string fileString = "{";
+    // Create a return string
+    std::string retString;
 
-    // Add the given items to pack (base 64 encoded) to the file string
-    for (const std::string& item : itemsToPack)
-        fileString += Crypto::base64Encode(item) + ",";
-    fileString += "}";
+    // Only continue if the packed-vector is valid
+    if (!itemsToPack.empty())
+    {
 
-    // Return the file String (in base 64 encoded format)
-    return Crypto::base64Encode(fileString);
+        // Perform operations in a try-catch for error-handling
+        try
+        {
+
+            // Un-pack the vector into the return string
+            yas::mem_ostream os;
+            constexpr size_t opts = yas::mem | yas::binary | yas::no_header;
+            yas::binary_oarchive<yas::mem_ostream, opts> oa(os);
+            oa & itemsToPack;
+            auto buf = os.get_intrusive_buffer();
+            retString.assign(buf.data, buf.size);
+        }
+
+        // Catch any and all exceptions here
+        catch (...)
+        {
+
+            // Clear the return string on exception
+            retString = "";
+        }
+    }
+
+    // Return the return string
+    return retString;
 }
 
 /**
@@ -97,27 +122,35 @@ std::string Utils::getFileString(const std::vector<std::string>& itemsToPack)
 std::vector<std::string> Utils::parseFileString(const std::string& fileString)
 {
 
-    // Decode the file string (they are base 64 encoded)
-    std::string decodedString = Crypto::base64Decode(fileString);
+    // Create a return vector
+    std::vector<std::string> retVect;
 
-    // Extract the file data from the file string
-    std::string fileData = Utils::getStringBetweenSubStrings(decodedString, "{", "}", ParseType::Outer);
-    std::vector<std::string> fileDataItems = Utils::splitStringByDelimiter(fileData, ",");
+    // Only continue if the file-string is valid
+    if (!fileString.empty())
+    {
 
-    // Decode all of the items in the vector
-    for (auto& fileDataItem : fileDataItems)
-        fileDataItem = Crypto::base64Decode(fileDataItem);
+        // Perform operations in a try-catch for error-handling
+        try
+        {
 
-    // If the only item is an empty one, clear the vector
-    // This is essentially a correction in the way we process empty strings
-    // due to signature addition on the end
-    if ((fileDataItems.size() == 1) && (fileDataItems[0].empty()))
-        fileDataItems.clear();
-    if ((fileDataItems.size() > 1) && (fileDataItems.back().empty()))
-        fileDataItems.pop_back();
+            // Parse the input file-string into the return vector
+            constexpr size_t opts = yas::mem | yas::binary | yas::no_header;
+            yas::mem_istream is(fileString.c_str(), fileString.size());
+            yas::binary_iarchive<yas::mem_istream, opts> ia(is);
+            ia & retVect;
+        }
 
-    // Return the vector of file string components
-    return fileDataItems;
+        // Catch any and all exceptions here
+        catch (...)
+        {
+
+            // Clear the return vector on exception
+            retVect.clear();
+        }
+    }
+
+    // Return the return vector
+    return retVect;
 }
 
 /**

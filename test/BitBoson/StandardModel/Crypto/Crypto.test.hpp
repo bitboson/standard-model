@@ -23,6 +23,8 @@
 #define BITBOSON_STANDARDMODEL_CRYPTO_TEST_HPP
 
 #include <BitBoson/StandardModel/Crypto/Crypto.h>
+#include <BitBoson/StandardModel/Crypto/DigitalSignatures/EcdsaKeyPair.hpp>
+#include <BitBoson/StandardModel/Crypto/DigitalSignatures/DigitalSignatureKeyPair.hpp>
 
 using namespace BitBoson::StandardModel;
 
@@ -75,27 +77,62 @@ TEST_CASE ("Test Winternitz Signatures", "[CryptoTest]")
 {
 
     // Generate two key-value pairs to use for testing
-    auto kvPair1 = Crypto::getWinternitzKeyPair();
-    auto kvPair2 = Crypto::getWinternitzKeyPair();
+    auto kvPair1 = Crypto::getKeyPair(DigitalSignatureKeyPair::KeyTypes::WINTERNITZ);
+    auto kvPair2 = Crypto::getKeyPair(DigitalSignatureKeyPair::KeyTypes::WINTERNITZ);
 
     // Verify that the first key-value pair works properly
-    auto signature1 = Crypto::getSignature("Hello World!", kvPair1.privateKey);
-    auto signature2 = Crypto::getSignature("Oh what a Beautiful Morning!", kvPair1.privateKey);
+    auto signature1 = kvPair1->sign("Hello World!");
+    auto signature2 = kvPair1->sign("Oh what a Beautiful Morning!");
     REQUIRE (signature1.size() == 2048);
     REQUIRE (signature2.size() == 2048);
     REQUIRE (signature1 != signature2);
-    REQUIRE (Crypto::verifySignedMessage("Hello World!", signature1, kvPair1.publicKey));
-    REQUIRE (!Crypto::verifySignedMessage("Hello World!", signature2, kvPair1.publicKey));
-    REQUIRE (Crypto::verifySignedMessage("Oh what a Beautiful Morning!", signature2, kvPair1.publicKey));
-    REQUIRE (!Crypto::verifySignedMessage("Oh what a Beautiful Morning!", signature1, kvPair1.publicKey));
+    REQUIRE (kvPair1->isValid("Hello World!", signature1));
+    REQUIRE (!kvPair1->isValid("Hello World!", signature2));
+    REQUIRE (kvPair1->isValid("Oh what a Beautiful Morning!", signature2));
+    REQUIRE (!kvPair1->isValid("Oh what a Beautiful Morning!", signature1));
 
     // Verify that a signatures with different keys are different
-    auto signature3 = Crypto::getSignature("Hello World!", kvPair2.privateKey);
+    auto signature3 = kvPair2->sign("Hello World!");
     REQUIRE (signature1 != signature3);
-    REQUIRE (Crypto::verifySignedMessage("Hello World!", signature1, kvPair1.publicKey));
-    REQUIRE (Crypto::verifySignedMessage("Hello World!", signature3, kvPair2.publicKey));
-    REQUIRE (!Crypto::verifySignedMessage("Hello World!", signature3, kvPair1.publicKey));
-    REQUIRE (!Crypto::verifySignedMessage("Hello World!", signature1, kvPair2.publicKey));
+    REQUIRE (kvPair1->isValid("Hello World!", signature1));
+    REQUIRE (kvPair2->isValid("Hello World!", signature3));
+    REQUIRE (!kvPair1->isValid("Hello World!", signature3));
+    REQUIRE (!kvPair2->isValid("Hello World!", signature1));
+}
+
+TEST_CASE ("Test ECDSA Signatures", "[CryptoTest]")
+{
+
+    // Generate two key-value pairs to use for testing
+    auto kvPair1 = Crypto::getKeyPair(DigitalSignatureKeyPair::KeyTypes::ECDSA);
+    auto kvPair2 = Crypto::getKeyPair(DigitalSignatureKeyPair::KeyTypes::ECDSA);
+
+    // Verify that the first key-value pair works properly
+    auto signature1 = kvPair1->sign("Hello World!");
+    auto signature2 = kvPair1->sign("Oh what a Beautiful Morning!");
+    REQUIRE (signature1.size() == 96);
+    REQUIRE (signature2.size() == 96);
+    REQUIRE (signature1 != signature2);
+    REQUIRE (kvPair1->isValid("Hello World!", signature1));
+    REQUIRE (!kvPair1->isValid("Hello World!", signature2));
+    REQUIRE (kvPair1->isValid("Oh what a Beautiful Morning!", signature2));
+    REQUIRE (!kvPair1->isValid("Oh what a Beautiful Morning!", signature1));
+
+    // Verify that a signatures with different keys are different
+    auto signature3 = kvPair2->sign("Hello World!");
+    REQUIRE (signature1 != signature3);
+    REQUIRE (kvPair1->isValid("Hello World!", signature1));
+    REQUIRE (kvPair2->isValid("Hello World!", signature3));
+    REQUIRE (!kvPair1->isValid("Hello World!", signature3));
+    REQUIRE (!kvPair2->isValid("Hello World!", signature1));
+
+    // Ensure we can verify an AWS signed message using the AWS public key
+    std::string awsMessage = "Hello";
+    std::string awsSignature = "MEUCIQDDUK3dJZRHW8ILRTyN6qRVGUIxfnbK2CippG8kIEusUAIgGa9kLezENZSjAkdIQ9N5BFIDkKlbaO5qCBh03EY5nrE=";
+    std::string awsPublicKey = "MFYwEAYHKoZIzj0CAQYFK4EEAAoDQgAEdTLxUdH2C6dlDyupHsL6IteufHiLvGMalqDt4ExVin7qUPiRvgkxaWEYsOFDv1vdZh4uS6PKPYRU2TbYyXalXA==";
+    auto awsPublicKeyObj = std::make_shared<EcdsaKeyPair>();
+    awsPublicKeyObj->setPublicKey(awsPublicKey);
+    REQUIRE (awsPublicKeyObj->isValid(awsMessage, awsSignature));
 }
 
 TEST_CASE ("Test Base 64 Encoding/Decoding", "[CryptoTest]")

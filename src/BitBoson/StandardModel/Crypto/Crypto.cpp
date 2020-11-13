@@ -27,6 +27,8 @@
 #include <BitBoson/StandardModel/Utils/Utils.h>
 #include <BitBoson/StandardModel/Crypto/Crypto.h>
 #include <BitBoson/StandardModel/Crypto/SecureRNG.h>
+#include <BitBoson/StandardModel/Crypto/DigitalSignatures/EcdsaKeyPair.hpp>
+#include <BitBoson/StandardModel/Crypto/DigitalSignatures/WinternitzKeyPair.hpp>
 
 using namespace BitBoson::StandardModel;
 
@@ -58,121 +60,89 @@ unsigned long Crypto::getNumberOfLeadingZerosInHash(const std::string& hash)
 }
 
 /**
- * Function used to get a public-private key-pair using the Winternitz one-time
- * method for digital signatures
+ * Function used to get a public-private key-pair for the provided type
  *
- * @return WinternitzKeyPair representing the private-public key-pair
+ * @param keyType KeyTypes representing the key-pair type
+ * @return KeyPair representing the private-public key-pair
  */
-Crypto::WinternitzKeyPair Crypto::getWinternitzKeyPair()
+std::shared_ptr<DigitalSignatureKeyPair> Crypto::getKeyPair(
+        DigitalSignatureKeyPair::KeyTypes keyType)
 {
 
-    // Generate 32 random hashes for the SHA256 Winternitz one-time
-    // signature scheme (private key)
-    std::vector<std::string> randomHashes;
-    for (auto ii = 0; ii < 32; ii++)
-        randomHashes.push_back(getRandomSha256(true));
+    // Create a return key-pair object
+    std::shared_ptr<DigitalSignatureKeyPair> retObj = nullptr;
 
-    // Construct the private key from the random hashes
-    auto privateKey = Utils::combineStringParts(randomHashes);
+    // Setup/Initialize the key-pair based on the provided type
+    switch (keyType)
+    {
 
-    // Hash the 32 random hashes 256 times
-    for (auto ii = 0; ii < 32; ii++)
-        for (auto jj = 0; jj < 256; jj++)
-            randomHashes[ii] = sha256(randomHashes[ii]);
+        // Handle the Winternitz key-type
+        case DigitalSignatureKeyPair::KeyTypes::WINTERNITZ:
+            retObj = std::make_shared<WinternitzKeyPair>();
+            break;
 
-    // Construct the public key from the hashes random hashes
-    auto publicKey = Utils::combineStringParts(randomHashes);
+        // Handle the ECDSA key-type
+        case DigitalSignatureKeyPair::KeyTypes::ECDSA:
+            retObj = std::make_shared<EcdsaKeyPair>();
+            break;
 
-    // Create the return structure
-    WinternitzKeyPair newKeyPair;
-    newKeyPair.publicKey = publicKey;
-    newKeyPair.privateKey = privateKey;
+        // Handle the NONE key-type (and thus default)
+        case DigitalSignatureKeyPair::KeyTypes::NONE:
+            retObj = nullptr;
+        default:
+            retObj = nullptr;
+    }
 
-    // Return the new key-pair structure
-    return newKeyPair;
+    // If the key-type was valid generate the new key-pair
+    if (retObj != nullptr)
+        retObj->generateNewKeyPair();
+
+    // Return the key-pair object
+    return retObj;
 }
 
 /**
- * Function used to get the hex-representation (as a string) of the given message given a private key
+ * Function used to get a public key-pair object for the provided type
+ * NOTE: This returns a key-pair with NO private key (just the public one)
  *
- * @param message String representing the message to sign
- * @param privateWinternitzKey String representing the key to sign the message with
- * @return String representing the signature of the message (in hex format) for the given private key
+ * @param keyType KeyTypes representing the key-pair type
+ * @param publicKey String representing the public key to use
+ * @return KeyPair representing the private-public key-pair
  */
-std::string Crypto::getSignature(const std::string& message, const std::string& privateWinternitzKey)
+std::shared_ptr<DigitalSignatureKeyPair> Crypto::getPublicKey(
+        DigitalSignatureKeyPair::KeyTypes keyType, const std::string& publicKey)
 {
 
-    // Define a string to hold the signature
-    std::string signature;
+    // Create a return key-pair object
+    std::shared_ptr<DigitalSignatureKeyPair> retObj = nullptr;
 
-    // Start by hashing the message using the SHA256 hash scheme
-    auto messageHash = sha256(message);
+    // Setup/Initialize the key-pair based on the provided type
+    switch (keyType)
+    {
 
-    // Split the message hash up into 32 8-bit parts
-    auto splitHashParts = Utils::splitStringIntoParts(messageHash, 2);
+        // Handle the Winternitz key-type
+        case DigitalSignatureKeyPair::KeyTypes::WINTERNITZ:
+            retObj = std::make_shared<WinternitzKeyPair>();
+            break;
 
-    // Loop through each part of the message hash and extract the integer for it
-    // TODO - This is done REALLY poorly - so fix it
-    std::vector<int> partInt;
-    for (const auto& item : splitHashParts)
-        partInt.push_back(boost::lexical_cast<int>(Utils::getBigIntString(getBigIntFromHash(item))));
+        // Handle the ECDSA key-type
+        case DigitalSignatureKeyPair::KeyTypes::ECDSA:
+            retObj = std::make_shared<EcdsaKeyPair>();
+            break;
 
-    // Split the Winternitz key into its component parts
-    auto privateKeyParts = Utils::splitStringIntoParts(privateWinternitzKey, 64);
+        // Handle the NONE key-type (and thus default)
+        case DigitalSignatureKeyPair::KeyTypes::NONE:
+            retObj = nullptr;
+        default:
+            retObj = nullptr;
+    }
 
-    // For each of the new integer representations for the hash parts,
-    // hash the private key part 256 - the generated integer amount
-    for (unsigned long ii = 0; ii < partInt.size(); ii++)
-        for (unsigned long jj = 0; jj < (256 - partInt[ii]); jj++)
-            privateKeyParts[ii] = sha256(privateKeyParts[ii]);
+    // If the key-type was valid populate the public key portion
+    if (retObj != nullptr)
+        retObj->setPublicKey(publicKey);
 
-    // Return the signature (combined hash parts);
-    return Utils::combineStringParts(privateKeyParts); // StringToHex(signature);
-}
-
-/**
- * Function used to verify the signature of a message using a given the base64 string representation
- * for the underlying public key
- *
- * @param message String representing the message associated with the signature
- * @param signature String representing the signature (in hex format) associated with the message
- * @param publicWinternitzKey Base64 string representation of the public key used to verify the
- *                         message-signature pair against
- * @return Boolean indicating whether the message-signature pair is valid (true) or not (false)
- */
-bool Crypto::verifySignedMessage(const std::string& message, const std::string& signature,
-                                 const std::string& publicWinternitzKey)
-{
-
-    // Create the return flag
-    bool result;
-
-    // Start by hashing the message using the SHA256 hash scheme
-    auto messageHash = sha256(message);
-
-    // Split the message hash up into 32 parts
-    auto splitHashParts = Utils::splitStringIntoParts(messageHash, 2);
-
-    // Loop through each part of the message hash and extract the integer for it
-    std::vector<int> partInt;
-    for (const auto& item : splitHashParts)
-        partInt.push_back(boost::lexical_cast<int>(Utils::getBigIntString(getBigIntFromHash(item))));
-
-    // Split the signature up into its component parts
-    auto splitSignatureParts = Utils::splitStringIntoParts(signature, 64);
-
-    // For each of the new integer representations for the hash parts,
-    // hash the private key part the generated integer amount
-    if (splitSignatureParts.size() >= partInt.size())
-        for (unsigned long ii = 0; ii < partInt.size(); ii++)
-            for (unsigned long jj = 0; jj < partInt[ii]; jj++)
-                splitSignatureParts[ii] = sha256(splitSignatureParts[ii]);
-
-    // Re-combined the individual hash parts and compare with the public key
-    result = (Utils::combineStringParts(splitSignatureParts) == publicWinternitzKey);
-
-    // Return the results
-    return result;
+    // Return the key-pair object
+    return retObj;
 }
 
 /**
@@ -252,9 +222,11 @@ std::string Crypto::argon2d(const std::string& data)
  * Function used to get the SHA256 hash of the given string in a hex format
  *
  * @param data String to get the hash of
- * @return String representing the hashed value (in hex format) of the given data
+ * @param toUpper Boolean indicating whether the output should be upper-case
+ * @param getBytes Boolean indicating whether to return bytes instead of hex
+ * @return String representing the hashed value of the given data
  */
-std::string Crypto::sha256(const std::string& data)
+std::string Crypto::sha256(const std::string& data, bool toUpper, bool getBytes)
 {
 
     // Create the destination vector and calculate the hash
@@ -262,11 +234,16 @@ std::string Crypto::sha256(const std::string& data)
     picosha2::hash256(data.begin(), data.end(), hash.begin(), hash.end());
 
     // Calculate the hex-form of the SHA256 hash
-    std::string retHash = picosha2::bytes_to_hex_string(hash.begin(), hash.end());
+    std::string retHash;
+    if (getBytes)
+        retHash = std::string((char*) &hash[0], hash.size());
+    else
+        retHash = picosha2::bytes_to_hex_string(hash.begin(), hash.end());
 
-    // Convert the hash to upper-case and return
-    for (auto & c: retHash)
-        c = toupper(c);
+    // Convert the hash to upper-case (if desired) and return
+    if (toUpper)
+        for (auto & c: retHash)
+            c = toupper(c);
     return retHash;
 }
 
@@ -459,4 +436,33 @@ std::string Crypto::base64Decode(const std::string& stringToDecode)
 
     // Return the converted string
     return std::string(ret, index);
+}
+
+/**
+ * Function used to convert the supplied string from hexidecimal to binary
+ *
+ * @param stringToDecode String representing the base-64 string to decode
+ * @return String representing the decoded string
+ */
+std::string Crypto::hexToBinary(const std::string& hexString)
+{
+
+    // Create a return string
+    std::string retString = "";
+
+    // Convert the hex-string to binary iteratively
+    for (size_t ii = 0; ii < hexString.size(); ii += 2)
+    {
+
+        // Extract two characters from hex string
+        std::string part = hexString.substr(ii, 2);
+
+        // Convert it to base 16 then to binary
+        // and append it to the output string
+        char ch = stoul(part, nullptr, 16);
+        retString += ch;
+    }
+
+    // Return the return string
+    return retString;
 }
