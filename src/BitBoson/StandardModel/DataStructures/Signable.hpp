@@ -115,6 +115,16 @@ namespace BitBoson::StandardModel
             }
 
             /**
+             * Virtual function used to set the key-type for the signed object
+             *
+             * @param keyType KeyTypes representing the key-type for the signed object
+             */
+            virtual void setKeyType(DigitalSignatureKeyPair::KeyTypes keyType)
+            {
+                _keyType = keyType;
+            }
+
+            /**
              * Destructor used to cleanup the instance
              */
             virtual ~Signable() = default;
