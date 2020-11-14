@@ -66,7 +66,6 @@ TEST_CASE ("Unique Separate Random Sequences Test", "[SecureRNGTest]")
     REQUIRE (secureRng1.generateRandomString(1024) != secureRng2.generateRandomString(1024));
 }
 
-
 TEST_CASE ("Unique Random Sequences Test", "[SecureRNGTest]")
 {
 
@@ -82,5 +81,24 @@ TEST_CASE ("Unique Random Sequences Test", "[SecureRNGTest]")
     REQUIRE (secureRng.generateRandomString(256) != secureRng.generateRandomString(256));
     REQUIRE (secureRng.generateRandomString(1024) != secureRng.generateRandomString(1024));
 }
+
+TEST_CASE ("Seeded and Bound Random Number Generator Test", "[SecureRNGTest]")
+{
+
+    // Verify that the numbers are the samv when given the same seed
+    REQUIRE (SecureRNG::generateRandomBigIntSeeded("BLAH") == SecureRNG::generateRandomBigIntSeeded("BLAH"));
+    REQUIRE (SecureRNG::generateRandomBigIntSeeded("Hello") == SecureRNG::generateRandomBigIntSeeded("Hello"));
+    REQUIRE (SecureRNG::generateRandomBigIntSeeded("World") == SecureRNG::generateRandomBigIntSeeded("World"));
+
+    // Verify that the numbers are different when given different seeds
+    REQUIRE (SecureRNG::generateRandomBigIntSeeded("BLAH") != SecureRNG::generateRandomBigIntSeeded("Hello"));
+    REQUIRE (SecureRNG::generateRandomBigIntSeeded("Hello") != SecureRNG::generateRandomBigIntSeeded("World"));
+    REQUIRE (SecureRNG::generateRandomBigIntSeeded("World") != SecureRNG::generateRandomBigIntSeeded("BLAH"));
+
+    // Verify that the bounds is working for the results
+    for (int ii = 1; ii < 20; ii++)
+        REQUIRE (SecureRNG::generateRandomBigIntSeeded("Howdy", ii) <= ii);
+}
+
 
 #endif //BITBOSON_STANDARDMODEL_SECURERNG_TEST_HPP

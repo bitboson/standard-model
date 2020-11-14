@@ -19,6 +19,9 @@
  *     - Tyler Parcell <OriginLegend>
  */
 
+#include <cryptopp/hex.h>
+#include <cryptopp/modes.h>
+#include <BitBoson/StandardModel/Crypto/Crypto.h>
 #include <BitBoson/StandardModel/Crypto/SecureRNG.h>
 
 using namespace BitBoson::StandardModel;
@@ -51,6 +54,43 @@ std::string SecureRNG::generateRandomString(int length)
     // Convert the byte-block to a string and return it
     std::string randString(reinterpret_cast<const char*>(&randByteBlock[0]), randByteBlock.size());
     return randString;
+}
+
+/**
+ * Static function used to generate a random BigInt using the seed
+ * NOTE: The same seed will yield the same results every time
+ *
+ * @param seed String representing the seed to use
+ * @param bound BigInt representing the upper-bound
+ * @return BigInt representing the random BigInt
+ */
+BigInt SecureRNG::generateRandomBigIntSeeded(const std::string& seed, BigInt bound)
+{
+
+    // Setup the secure byte-block for the given seed
+    auto seedHash = Crypto::sha256(seed);
+    CryptoPP::SecByteBlock seedBlock((CryptoPP::byte*) (&seedHash[0]), seedHash.size());
+
+    // Create the secure random-number-generator based on the seed
+    CryptoPP::OFB_Mode<CryptoPP::AES>::Encryption prng;
+    prng.SetKeyWithIV(seedBlock, 32, seedBlock + 32, 16);
+
+    // Generate the random number usig the secure random-number-generator
+    CryptoPP::SecByteBlock randomBlock(16);
+    prng.GenerateBlock(randomBlock, randomBlock.size());
+
+    // Extract the random block as a string for conversion
+    std::string randomBlockString;
+    CryptoPP::HexEncoder hex(new CryptoPP::StringSink(randomBlockString));
+    hex.Put(randomBlock, randomBlock.size());
+    hex.MessageEnd();
+
+    // Convert the hex-string into a BigInt and return it
+    // NOTE: We'll also apply the bound if it is non-zero
+    auto randomInt = Crypto::getBigIntFromHash(randomBlockString);
+    if (bound > 0)
+        randomInt = (randomInt % bound);
+    return randomInt;
 }
 
 /**

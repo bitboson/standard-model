@@ -75,6 +75,30 @@ namespace BitBoson::StandardModel
             }
 
             /**
+             * Function used to get the private key
+             *
+             * @return String representing the private key
+             */
+            std::string getPrivateKey() const
+            {
+
+                // Simply return the private key
+                return _privateKey;
+            }
+
+            /**
+             * Function used to set the private key
+             *
+             * @param privateKey String representing the private key
+             */
+            void setPrivateKey(const std::string& privateKey)
+            {
+
+                // Simply set the private key
+                _privateKey = privateKey;
+            }
+
+            /**
              * Virtual function used to generate a new key-pair
              */
             virtual void generateNewKeyPair() = 0;
@@ -104,37 +128,68 @@ namespace BitBoson::StandardModel
             virtual bool isValid(const std::string& message, const std::string& signature) const = 0;
 
             /**
+             * Static function used to get the string representation of a key-type
+             *
+             * @param keyType KeyTypes representing the key type to get the string for
+             * @return String representation of the provided key-type
+             */
+            static std::string getKeyTypeString(KeyTypes keyType)
+            {
+
+                // Create a return string
+                std::string retString;
+
+                // Convert the string based on the key-type
+                switch (keyType)
+                {
+
+                    // Handle the Winternitz key-type
+                    case KeyTypes::WINTERNITZ:
+                        retString = "WINTERNITZ";
+                        break;
+
+                    // Handle the ECDSA key-type
+                    case KeyTypes::ECDSA:
+                        retString = "ECDSA";
+                        break;
+
+                    // Handle the NONE key-type (and thus default)
+                    case KeyTypes::NONE:
+                        retString = "NONE";
+                    default:
+                        retString = "NONE";
+                }
+
+                // Return the return string
+                return retString;
+            }
+
+            /**
+             * Static function used to get the key-type for the given string representation
+             *
+             * @param keyTypeString String representation of the key-type to convert
+             * @return KeyTypes representing the key-type for the provided string
+             */
+            static KeyTypes getKeyTypeString(const std::string& keyTypeString)
+            {
+
+                // Create a return key-type
+                KeyTypes retKeyType = KeyTypes::NONE;
+
+                // Convert the string to the corresponding key-type
+                if (keyTypeString == "WINTERNITZ")
+                    retKeyType = KeyTypes::WINTERNITZ;
+                else if (keyTypeString == "ECDSA")
+                    retKeyType = KeyTypes::ECDSA;
+
+                // Return the return key-type
+                return retKeyType;
+            }
+
+            /**
              * Destructor used to cleanup the instance
              */
             virtual ~DigitalSignatureKeyPair() = default;
-
-        // Protected member functions
-        protected:
-
-            /**
-             * Internal function used to get the private key
-             *
-             * @return String representing the private key
-             */
-            std::string getPrivateKey() const
-            {
-
-                // Simply return the private key
-                return _privateKey;
-            }
-
-            /**
-             * Internal function used to set the private key
-             *
-             * @param privateKey String representing the private key
-             */
-            void setPrivateKey(const std::string& privateKey)
-            {
-
-                // Simply set the private key
-                _privateKey = privateKey;
-            }
-
     };
 }
 

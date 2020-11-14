@@ -56,6 +56,16 @@ namespace BitBoson::StandardModel
             std::string generateRandomString(int length);
 
             /**
+             * Static function used to generate a random BigInt using the seed
+             * NOTE: The same seed will yield the same results every time
+             *
+             * @param seed String representing the seed to use
+             * @param bound BigInt representing the upper-bound
+             * @return BigInt representing the random BigInt
+             */
+            static BigInt generateRandomBigIntSeeded(const std::string& seed, BigInt bound=0);
+
+            /**
              * Function used to generate a random SecBlock using the Secure
              * Random Number Generator
              *
