@@ -93,9 +93,9 @@ namespace BitBoson::StandardModel
 
                 // Loop through each part of the message hash and extract the integer for it
                 // TODO - This is done REALLY poorly - so fix it
-                std::vector<int> partInt;
+                std::vector<unsigned int> partInt;
                 for (const auto& item : splitHashParts)
-                    partInt.push_back(boost::lexical_cast<int>(Utils::getBigIntString(
+                    partInt.push_back(boost::lexical_cast<unsigned int>(Utils::getBigIntString(
                             Crypto::getBigIntFromHash(item))));
 
                 // Split the Winternitz key into its component parts
@@ -131,9 +131,9 @@ namespace BitBoson::StandardModel
                 auto splitHashParts = Utils::splitStringIntoParts(messageHash, 2);
 
                 // Loop through each part of the message hash and extract the integer for it
-                std::vector<int> partInt;
+                std::vector<unsigned int> partInt;
                 for (const auto& item : splitHashParts)
-                    partInt.push_back(boost::lexical_cast<int>(Utils::getBigIntString(
+                    partInt.push_back(boost::lexical_cast<unsigned int>(Utils::getBigIntString(
                             Crypto::getBigIntFromHash(item))));
 
                 // Split the signature up into its component parts

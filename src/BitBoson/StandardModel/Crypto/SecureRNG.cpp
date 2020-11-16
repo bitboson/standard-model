@@ -45,7 +45,7 @@ SecureRNG::SecureRNG()
  * @param length Integer representing the length of the string
  * @return String representing the random byte-string
  */
-std::string SecureRNG::generateRandomString(int length)
+std::string SecureRNG::generateRandomString(unsigned int length)
 {
 
     // Generate the corresponding random byte-block
@@ -100,7 +100,7 @@ BigInt SecureRNG::generateRandomBigIntSeeded(const std::string& seed, BigInt bou
  * @param length Integer representing the length of the string
  * @return SecByteBlock representing the random byte-block
  */
-CryptoPP::SecByteBlock SecureRNG::generateRandomByteBlock(int length)
+CryptoPP::SecByteBlock SecureRNG::generateRandomByteBlock(unsigned int length)
 {
 
     // Create a return SecByteBlock

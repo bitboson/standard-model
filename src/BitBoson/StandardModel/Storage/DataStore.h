@@ -152,7 +152,7 @@ namespace BitBoson::StandardModel
              * @param chunkSizeInBytes Long representing the chunk size to get in bytes
              * @return Generator representing the chunked data-store data
              */
-            std::shared_ptr<Generator<std::string>> getChunkedData(long chunkSizeInBytes=1000000);
+            std::shared_ptr<Generator<std::string>> getChunkedData(unsigned long chunkSizeInBytes=1000000);
 
             /**
              * Destructor used to cleanup the instance

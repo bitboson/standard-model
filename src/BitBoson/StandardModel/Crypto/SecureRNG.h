@@ -53,7 +53,7 @@ namespace BitBoson::StandardModel
              * @param length Integer representing the length of the string
              * @return String representing the random byte-string
              */
-            std::string generateRandomString(int length);
+            std::string generateRandomString(unsigned int length);
 
             /**
              * Static function used to generate a random BigInt using the seed
@@ -72,7 +72,7 @@ namespace BitBoson::StandardModel
              * @param length Integer representing the length of the string
              * @return SecByteBlock representing the random byte-string
              */
-            CryptoPP::SecByteBlock generateRandomByteBlock(int length);
+            CryptoPP::SecByteBlock generateRandomByteBlock(unsigned int length);
 
             /**
              * Destructor used to cleanup the instance

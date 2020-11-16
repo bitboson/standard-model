@@ -472,7 +472,7 @@ bool DataStore::setChunkedData(const std::shared_ptr<Generator<std::string>>& ch
  * @param chunkSizeInBytes Long representing the chunk size to get in bytes
  * @return Generator representing the chunked data-store data
  */
-std::shared_ptr<Generator<std::string>> DataStore::getChunkedData(long chunkSizeInBytes)
+std::shared_ptr<Generator<std::string>> DataStore::getChunkedData(unsigned long chunkSizeInBytes)
 {
 
     // Create and return a generator for getting the chunked data

@@ -28,6 +28,8 @@ project:
   test: test
   targets:
     - default
+    - linux-x86
+    - linux-x64
 
 # Setup the project dependencies
 dependencies:
@@ -38,7 +40,7 @@ dependencies:
     url: https://github.com/boostorg/boost.git
     rev: boost-1.69.0
     type: manual
-    target default:
+    target any:
       build:
         - ./bootstrap.sh --exec-prefix=/usr/local
           --with-libraries=system,filesystem,regex,thread,chrono,context,coroutine
@@ -64,7 +66,7 @@ dependencies:
     url: git://github.com/bitboson-deps/leveldb.git
     rev: 1.22
     type: manual
-    target default:
+    target any:
       build:
         - mkdir -p build
         - cd build
@@ -81,7 +83,7 @@ dependencies:
     url: git://github.com/bitboson-deps/cryptopp.git
     rev: CRYPTOPP_8_2_0
     type: manual
-    target default:
+    target any:
       build:
         - make dynamic
         - mkdir -p output-headers/cryptopp
@@ -97,7 +99,7 @@ dependencies:
     url: git://github.com/bitboson-deps/picosha2.git
     rev: b699e6c900be6e00152db5a3d123c1db42ea13d0
     type: manual
-    target default:
+    target any:
       build:
         - mkdir -p output-headers/picosha2
         - cp picosha2.h output-headers/picosha2
@@ -110,7 +112,7 @@ dependencies:
     url: git://github.com/bitboson-deps/ThreadPool.git
     rev: 9a42ec1329f259a5f4881a291db1dcb8f2ad9040
     type: manual
-    target default:
+    target any:
       build:
         - mkdir -p output-headers/progschj
         - cp ThreadPool.h output-headers/progschj
@@ -123,7 +125,7 @@ dependencies:
     url: git://github.com/bitboson-deps/phc-winner-argon2.git
     rev: 20190702
     type: manual
-    target default:
+    target any:
       build:
         - make
       libs:
@@ -137,6 +139,6 @@ dependencies:
     url: git://github.com/bitboson-deps/yas.git
     rev: 7.0.5
     type: manual
-    target default:
+    target any:
       include:
         - include/
