@@ -46,7 +46,7 @@ bool compareVectors(std::vector<std::string> vect1, std::vector<std::string> vec
 
         // Verify that all of the items are the same
         retFlag = true;
-        for (auto ii = 0; ii < vect1.size(); ii++)
+        for (unsigned long ii = 0; ii < vect1.size(); ii++)
             if (vect1[ii] != vect2[ii])
                 retFlag = false;
     }

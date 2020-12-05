@@ -38,7 +38,7 @@ TEST_CASE ("General Lock-Key Manager Test", "[LockKeyManagerTest]")
         [&globalCount](std::shared_ptr<int> val) {
 
             // Use the Lock-Key Manager to protect the global count
-            auto lock = LockKeyManager::getLock("globalCount");
+            auto lock = LockKeyManager<Lock>::getLock("globalCount");
             std::cout << *val << std::endl;
 
             // Update the global count value
@@ -72,7 +72,7 @@ TEST_CASE ("Forced-No-Collission General Lock-Key Manager Test", "[LockKeyManage
         [&globalCount](std::shared_ptr<int> val) {
 
             // Use the Lock-Key Manager to protect the global count
-            auto lock = LockKeyManager::getLock("globalCount");
+            auto lock = LockKeyManager<Lock>::getLock("globalCount");
 
             // Update the global count value
             globalCount += *val;
@@ -108,7 +108,7 @@ TEST_CASE ("Forced-Collission General Lock-Key Manager Test", "[LockKeyManagerTe
         [&globalCount](std::shared_ptr<int> val) {
 
             // Use the Lock-Key Manager to protect the global count
-            auto lock = LockKeyManager::getLock("globalCount");
+            auto lock = LockKeyManager<Lock>::getLock("globalCount");
             std::cout << *val << std::endl;
 
             // Ensure the thread sleeps to force wait conditions
@@ -150,7 +150,7 @@ TEST_CASE ("Multi-Lock General Lock-Key Manager Test", "[LockKeyManagerTest]")
 
             // Use the Lock-Key Manager to protect the global count
             auto currCount = ((*val) % 4);
-            auto lock = LockKeyManager::getLock("globalCount" + std::to_string(currCount));
+            auto lock = LockKeyManager<Lock>::getLock("globalCount" + std::to_string(currCount));
             std::cout << *val << std::endl;
 
             // Update the global count value
@@ -199,7 +199,7 @@ TEST_CASE ("Multi-Lock Forced-No-Collission General Lock-Key Manager Test", "[Lo
 
             // Use the Lock-Key Manager to protect the global count
             auto currCount = ((*val) % 4);
-            auto lock = LockKeyManager::getLock("globalCount" + std::to_string(currCount));
+            auto lock = LockKeyManager<Lock>::getLock("globalCount" + std::to_string(currCount));
 
             // Update the global count value
             if (currCount == 0)
@@ -253,7 +253,7 @@ TEST_CASE ("Forced-Collission Multi-Lock General Lock-Key Manager Test", "[LockK
 
             // Use the Lock-Key Manager to protect the global count
             auto currCount = ((*val) % 4);
-            auto lock = LockKeyManager::getLock("globalCount" + std::to_string(currCount));
+            auto lock = LockKeyManager<Lock>::getLock("globalCount" + std::to_string(currCount));
             std::this_thread::sleep_for(std::chrono::milliseconds(100));
             std::cout << *val << std::endl;
 

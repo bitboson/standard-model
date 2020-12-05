@@ -170,7 +170,7 @@ namespace BitBoson::StandardModel
              * @param keyTypeString String representation of the key-type to convert
              * @return KeyTypes representing the key-type for the provided string
              */
-            static KeyTypes getKeyTypeString(const std::string& keyTypeString)
+            static KeyTypes getKeyTypeFromString(const std::string& keyTypeString)
             {
 
                 // Create a return key-type

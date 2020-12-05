@@ -29,86 +29,17 @@
 namespace BitBoson::StandardModel
 {
 
-    class LockKeyManager
+    template <class T> class LockKeyManager
     {
 
         // Friend the Lock class
         friend class Lock;
 
-        // Public member class
-        public:
-
-            class Lock
-            {
-
-                // Private member variables
-                private:
-                    bool _isLocked;
-                    std::mutex _mutex;
-                    std::string _resource;
-
-                // Public member functions
-                public:
-
-                    /**
-                     * Constructor used to setup the instance
-                     *
-                     * @param resource String representing the resource
-                     */
-                    Lock(const std::string& resource)
-                    {
-
-                        // Lock the internally stored mutex
-                        _mutex.lock();
-                        _isLocked = true;
-                        _resource = resource;
-                    }
-
-                    /**
-                     * Function used to unlock the lock (if it was locked)
-                     */
-                    void unlock()
-                    {
-
-                        // If the lock is still locked then unlock it
-                        if (_isLocked)
-                        {
-
-                            // Mark the lock as unlocked
-                            _isLocked = false;
-
-                            // Actually unlock the mutex itself
-                            _mutex.unlock();
-
-                            // Inform the singleton LockKeyManager that
-                            // the resource has been free for cleanup
-                            getInstance().informUnlocked(_resource);
-                        }
-                    }
-
-                    /**
-                     * Function used to block the caller until the lock
-                     * represented by this instance is released
-                     */
-                    void wait()
-                    {
-
-                        // Attempt to get the lock to force blocking
-                        _mutex.lock();
-                        _isLocked = true;
-                    }
-
-                    /**
-                     * Destructor used to cleanup the instance
-                     */
-                    virtual ~Lock() = default;
-            };
-
         // Private member variables
         private:
             std::shared_ptr<std::mutex> _threadSafeMutex;
             std::unordered_map<std::string, int> _numWaiting;
-            std::unordered_map<std::string, std::shared_ptr<Lock>> _locks;
+            std::unordered_map<std::string, std::shared_ptr<T>> _locks;
 
         // Public member functions
         public:
@@ -118,12 +49,27 @@ namespace BitBoson::StandardModel
             void operator=(LockKeyManager const&) = delete;
 
             /**
+             * Static function used to get a lock for the provided key and context
+             *
+             * @param context String representing the resource context to lock a key for
+             * @param resource String representing the resource key to lock
+             * @return Lock representing the lock on the provided key to manage
+             */
+            static std::shared_ptr<T> getLock(const std::string& context,
+                    const std::string& resource)
+            {
+
+                // Simply combine and lock the instance using the context and key
+                return getLock(context + "_" + resource);
+            }
+
+            /**
              * Static function used to get a lock for the provided key
              *
              * @param resource String representing the resource key to lock
              * @return Lock representing the lock on the provided key to manage
              */
-            static std::shared_ptr<Lock> getLock(const std::string& resource)
+            static std::shared_ptr<T> getLock(const std::string& resource)
             {
 
                 // Lock the synchronous function/instance mutex
@@ -316,7 +262,7 @@ namespace BitBoson::StandardModel
              * @param resource String representing the resource
              * @return Lock pointer representing the lock
              */
-            std::shared_ptr<Lock> getLockObject(const std::string& resource)
+            std::shared_ptr<T> getLockObject(const std::string& resource)
             {
 
                 // Simply get and return the resource lock
@@ -330,11 +276,11 @@ namespace BitBoson::StandardModel
              * @param resource String representing the resource
              * @return Lock pointer representing the lock
              */
-            std::shared_ptr<Lock> initializeLockObject(const std::string& resource)
+            std::shared_ptr<T> initializeLockObject(const std::string& resource)
             {
 
                 // Simply create and return the resource count
-                _locks[resource] = std::make_shared<Lock>(resource);
+                _locks[resource] = std::make_shared<T>(resource);
                 return _locks[resource];
             }
 
@@ -350,6 +296,95 @@ namespace BitBoson::StandardModel
                 // Remove both the wait-list count and lock
                 _numWaiting.erase(resource);
                 _locks.erase(resource);
+            }
+    };
+
+    class Lock
+    {
+
+        // Private member variables
+        private:
+            bool _isLocked;
+            std::mutex _mutex;
+            std::string _resource;
+
+        // Public member functions
+        public:
+
+            /**
+             * Constructor used to setup the instance
+             *
+             * @param resource String representing the resource
+             */
+            Lock(const std::string& resource)
+            {
+
+                // Lock the internally stored mutex
+                _mutex.lock();
+                _isLocked = true;
+                _resource = resource;
+            }
+
+            /**
+             * Function used to unlock the lock (if it was locked)
+             */
+            void unlock()
+            {
+
+                // If the lock is still locked then unlock it
+                if (_isLocked)
+                {
+
+                    // Mark the lock as unlocked
+                    _isLocked = false;
+
+                    // Actually unlock the mutex itself
+                    mutexUnlock();
+
+                    // Inform the singleton LockKeyManager that
+                    // the resource has been free for cleanup
+                    LockKeyManager<Lock>::getInstance().informUnlocked(_resource);
+                }
+            }
+
+            /**
+             * Function used to block the caller until the lock
+             * represented by this instance is released
+             */
+            void wait()
+            {
+
+                // Attempt to get the lock to force blocking
+                mutexLock();
+                _isLocked = true;
+            }
+
+            /**
+             * Destructor used to cleanup the instance
+             */
+            virtual ~Lock() = default;
+
+        // Protected member functions
+        protected:
+
+            /**
+             * Virtual internal function used to perform the mutex-lock
+             */
+            virtual void mutexLock()
+            {
+
+                // Simply lock the mutex held internally
+                _mutex.lock();
+            }
+
+            /**
+             * Virtual internal function used to perform the mutex-unlock
+             */
+            virtual void mutexUnlock()
+            {
+
+                // Simply unlock the mutex held internally
+                _mutex.unlock();
             }
     };
 }

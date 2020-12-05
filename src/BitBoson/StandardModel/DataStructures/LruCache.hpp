@@ -22,6 +22,7 @@
 #ifndef BITBOSON_STANDARDMODEL_LRUCACHE_HPP
 #define BITBOSON_STANDARDMODEL_LRUCACHE_HPP
 
+#include <vector>
 #include <memory>
 #include <utility>
 
@@ -78,15 +79,12 @@ namespace BitBoson::StandardModel
             {
                 std::string key;
                 std::shared_ptr<T> val;
-                CacheNode* prev;
-                CacheNode* next;
             };
 
         // Private member variables
         private:
-            long _cacheSize;
-            CacheNode* _head;
-            CacheNode* _tail;
+            unsigned long _cacheSize;
+            std::list<std::string> _cacheList;
             std::shared_ptr<LruCacheSupplier> _cacheSupplier;
             std::unordered_map<std::string, CacheNode*> _cacheMap;
 
@@ -106,12 +104,6 @@ namespace BitBoson::StandardModel
                 // Initialize relevant member variables
                 _cacheSize = cacheSize;
                 _cacheSupplier = std::move(cacheSupplier);
-
-                // Initialize/setup the Doubly-Linked List
-                _head = new CacheNode();
-                _tail = new CacheNode();
-                _head->next = _tail;
-                _tail->prev = _head;
             }
 
             /**
@@ -146,8 +138,8 @@ namespace BitBoson::StandardModel
                         mapVal->val = item;
 
                         // Reset the node's position in the LRU-cache
-                        removeNodeFromList(mapVal, false);
-                        addNodeToList(mapVal);
+                        _cacheList.remove(mapVal->key);
+                        _cacheList.push_front(mapVal->key);
 
                         // Setup the return value as true
                         retFlag = true;
@@ -164,7 +156,8 @@ namespace BitBoson::StandardModel
                         {
 
                             // Get the least-recently-used item
-                            auto lruItem = _tail->prev;
+                            auto lruItemKey = _cacheList.back();
+                            auto lruItem = _cacheMap[lruItemKey];
 
                             // Write the node value back to the supplier
                             _cacheSupplier->addItem(lruItem->key, lruItem->val);
@@ -172,7 +165,7 @@ namespace BitBoson::StandardModel
                             // Remove the least-recently-used item from
                             // both the map and the linked-list
                             _cacheMap.erase(lruItem->key);
-                            removeNodeFromList(lruItem, true);
+                            _cacheList.remove(lruItem->key);
                         }
 
                         // Create the new node to add for the new data
@@ -183,7 +176,7 @@ namespace BitBoson::StandardModel
                         // Add the new node we just created to the map
                         // and the linked-list for cache-use
                         _cacheMap[key] = newNode;
-                        addNodeToList(newNode);
+                        _cacheList.push_front(newNode->key);
 
                         // Setup the return value as true
                         retFlag = true;
@@ -233,8 +226,8 @@ namespace BitBoson::StandardModel
                     {
 
                         // Move the item to the front of the linked-list
-                        removeNodeFromList(mapVal, false);
-                        addNodeToList(mapVal);
+                        _cacheList.remove(mapVal->key);
+                        _cacheList.push_front(mapVal->key);
                     }
 
                     // If we had to get the node from the supplier then
@@ -274,7 +267,7 @@ namespace BitBoson::StandardModel
 
                         // Remove the item from the map and linked-list
                         _cacheMap.erase(mapVal->key);
-                        removeNodeFromList(mapVal, true);
+                        _cacheList.remove(mapVal->key);
                     }
 
                     // Perform the corresponding delete on the supplier
@@ -314,60 +307,6 @@ namespace BitBoson::StandardModel
 
                 // Flush/write-back the cache items
                 writeAllBackNow();
-
-                // Delete all nodes in the list
-                for (auto cacheItem : _cacheMap)
-                    removeNodeFromList(cacheItem.second, true);
-                delete _head;
-                delete _tail;
-            }
-
-        // Private member functions
-        private:
-
-            /**
-             * Internal function used to add a node to the linked-list
-             *
-             * @param node CacheNode Pointer representing the node to add
-             */
-            void addNodeToList(CacheNode* node)
-            {
-
-                // Get the next-node reference for the head node
-                auto headNext = _head->next;
-
-                // Adjust the head head-refernce to add the given node
-                _head->next = node;
-                node->prev = _head;
-
-                // Add the original head to be the next node after the
-                // provided/given node which now represents the head
-                node->next = headNext;
-                headNext->prev = node;
-            }
-
-            /**
-             * Internal function used to remove a node from the linked-list
-             *
-             * @param node CacheNode Pointer representing the node to remove
-             * @param deleteNode Boolean indicating whether to delete the removed node
-             */
-            void removeNodeFromList(CacheNode* node, bool deleteNode)
-            {
-
-                // Get next/previous node references for the given node
-                auto nextNode = node->next;
-                auto prevNode = node->prev;
-
-                // Adjust the references for the next/previous node to
-                // remove the provided node from the linked-list
-                nextNode->prev = prevNode;
-                prevNode->next = nextNode;
-
-                // Delete the node we are removing from the list
-                // if this is applicable
-                if (deleteNode)
-                    delete node;
             }
     };
 }

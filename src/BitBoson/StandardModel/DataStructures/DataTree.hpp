@@ -454,11 +454,8 @@ namespace BitBoson::StandardModel
                 _treeDictionary = nullptr;
             }
 
-        // Private member functions
-        private:
-
             /**
-             * Internal function used to get the depth of the given node
+             * Function used to get the depth of the given node
              *
              * @param nodeHash String representing the node to use
              * @return Long representing the depth/height of the node
