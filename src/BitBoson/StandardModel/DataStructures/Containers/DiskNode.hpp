@@ -322,17 +322,17 @@ namespace BitBoson::StandardModel
 
                         // Extract the packed vector of data in the file-string
                         auto packedVect = Utils::parseFileString(nodeData);
-                        if (packedVect.size() >= 4)
+                        if ((packedVect != nullptr) && (packedVect->size >= 4))
                         {
 
                             // Build up the Disk Node from the cache data
                             retNode = std::make_shared<DiskNode<T>>();
                             retNode->setInternalDiskCache(_internalDiskCache);
                             retNode->_isLoadingNode = true;
-                            retNode->setData(getTemplateArgFromString(packedVect[0]));
-                            retNode->setHeight(std::stol(packedVect[1]));
-                            retNode->_leftChild = packedVect[2];
-                            retNode->_rightChild = packedVect[3];
+                            retNode->setData(getTemplateArgFromString(Utils::getNextFileStringValue(packedVect)));
+                            retNode->setHeight(std::stol(Utils::getNextFileStringValue(packedVect)));
+                            retNode->_leftChild = Utils::getNextFileStringValue(packedVect);
+                            retNode->_rightChild = Utils::getNextFileStringValue(packedVect);
                             retNode->_isLoadingNode = false;
                         }
                     }

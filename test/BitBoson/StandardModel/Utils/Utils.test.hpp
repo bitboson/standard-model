@@ -142,29 +142,23 @@ TEST_CASE ("Create/Parse File-String Test", "[UtilsTest]")
     packedVect.emplace_back("You");
     packedVect.emplace_back("?");
 
-    // Create a file-string from the packed vector
-    //REQUIRE (Utils::getFileString(std::vector<std::string>()) == "");
-    //REQUIRE (Utils::getFileString(packedVect) == "[\"Hello\",\"World\",null,\"How\",\"Are\",\"You\",\"?\"]");
-
     // Parse a completely empty file string into a packed vector
     auto packedVectOut = Utils::parseFileString("");
-    REQUIRE (packedVectOut.empty());
+    REQUIRE (packedVectOut == nullptr);
 
     // Parse the file-string back into a packed vector
-    //packedVectOut = Utils::parseFileString("[\"Hello\",\"World\",null,\"How\",\"Are\",\"You\",\"?\"]");
     packedVectOut = Utils::parseFileString(Utils::getFileString(packedVect));
-    REQUIRE (packedVectOut.size() == 7);
-    REQUIRE (packedVectOut[0] == "Hello");
-    REQUIRE (packedVectOut[1] == "World");
-    REQUIRE (packedVectOut[2].empty());
-    REQUIRE (packedVectOut[3] == "How");
-    REQUIRE (packedVectOut[4] == "Are");
-    REQUIRE (packedVectOut[5] == "You");
-    REQUIRE (packedVectOut[6] == "?");
+    REQUIRE (packedVectOut->size == 7);
+    REQUIRE (Utils::getNextFileStringValue(packedVectOut) == "Hello");
+    REQUIRE (Utils::getNextFileStringValue(packedVectOut) == "World");
+    REQUIRE (Utils::getNextFileStringValue(packedVectOut).empty());
+    REQUIRE (Utils::getNextFileStringValue(packedVectOut) == "How");
+    REQUIRE (Utils::getNextFileStringValue(packedVectOut) == "Are");
+    REQUIRE (Utils::getNextFileStringValue(packedVectOut) == "You");
+    REQUIRE (Utils::getNextFileStringValue(packedVectOut) == "?");
 
     // Create a file-string from the given information
     auto fileString = Utils::getFileString(packedVect);
-    //REQUIRE (fileString == "[\"Hello\",\"World\",null,\"How\",\"Are\",\"You\",\"?\"]");
 
     // Create a new random packed vector including the previous
     std::vector<std::string> packedVect2;
@@ -178,8 +172,6 @@ TEST_CASE ("Create/Parse File-String Test", "[UtilsTest]")
 
     // Create a file-string from the given information
     auto fileString2 = Utils::getFileString(packedVect2);
-    //REQUIRE (fileString2 == "[\"1\",\"2\",\"[\\\"Hello\\\",\\\"World\\\",null,\\\"How\\\","
-    //                        "\\\"Are\\\",\\\"You\\\",\\\"?\\\"]\",\"3\",\"4\",\"5\",\"6\"]");
 
     // Create a new random packed vector including the previous two
     std::vector<std::string> packedVect3;
@@ -194,40 +186,34 @@ TEST_CASE ("Create/Parse File-String Test", "[UtilsTest]")
 
     // Parse the file-string back into a readable state for the top-level
     auto packedVectParsed = Utils::parseFileString(fileString3);
-    REQUIRE (packedVectParsed.size() == 5);
-    REQUIRE (packedVectParsed[0] == "A");
-    REQUIRE (packedVectParsed[1] == "B");
-    REQUIRE (packedVectParsed[2] == fileString2);
-    REQUIRE (packedVectParsed[3] == "C");
-    REQUIRE (packedVectParsed[4] == fileString);
+    REQUIRE (packedVectParsed->size == 5);
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "A");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "B");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == fileString2);
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "C");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == fileString);
 
     // Parse the file-string back into a readable state for the middle-level
     packedVectParsed = Utils::parseFileString(fileString2);
-    REQUIRE (packedVectParsed.size() == 7);
-    REQUIRE (packedVectParsed[0] == "1");
-    REQUIRE (packedVectParsed[1] == "2");
-    REQUIRE (packedVectParsed[2] == fileString);
-    REQUIRE (packedVectParsed[3] == "3");
-    REQUIRE (packedVectParsed[4] == "4");
-    REQUIRE (packedVectParsed[5] == "5");
-    REQUIRE (packedVectParsed[6] == "6");
+    REQUIRE (packedVectParsed->size == 7);
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "1");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "2");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == fileString);
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "3");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "4");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "5");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "6");
 
     // Parse the file-string back into a readable state for the bottom-level
     packedVectParsed = Utils::parseFileString(fileString);
-    REQUIRE (packedVectParsed.size() == 7);
-    REQUIRE (packedVectParsed[0] == "Hello");
-    REQUIRE (packedVectParsed[1] == "World");
-    REQUIRE (packedVectParsed[2].empty());
-    REQUIRE (packedVectParsed[3] == "How");
-    REQUIRE (packedVectParsed[4] == "Are");
-    REQUIRE (packedVectParsed[5] == "You");
-    REQUIRE (packedVectParsed[6] == "?");
-
-    std::cout << "START" << std::endl;
-    long val = 0;
-    for (int ii = 0; ii < 1000000; ii++)
-        val += Utils::parseFileString(fileString).size();
-    std::cout << "END: " << val << std::endl;
+    REQUIRE (packedVectParsed->size == 7);
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "Hello");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "World");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed).empty());
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "How");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "Are");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "You");
+    REQUIRE (Utils::getNextFileStringValue(packedVectParsed) == "?");
 }
 
 TEST_CASE ("Combine String Parts Test", "[UtilsTest]")

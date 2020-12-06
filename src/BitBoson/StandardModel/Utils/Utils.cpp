@@ -19,6 +19,7 @@
  *     - Tyler Parcell <OriginLegend>
  */
 
+#include <regex>
 #include <yas/mem_streams.hpp>
 #include <yas/binary_iarchive.hpp>
 #include <yas/binary_oarchive.hpp>
@@ -117,13 +118,13 @@ std::string Utils::getFileString(const std::vector<std::string>& itemsToPack)
  * Function used to parse a given file string into its component items
  *
  * @param fileString FileString representing the object to parse
- * @return Vector fo strings representing the individual items from the file string
+ * @return FileStringVect representing the individual items from the file string
  */
-std::vector<std::string> Utils::parseFileString(const std::string& fileString)
+std::shared_ptr<Utils::FileStringVect> Utils::parseFileString(const std::string& fileString)
 {
 
-    // Create a return vector
-    std::vector<std::string> retVect;
+    // Create a return object
+    std::shared_ptr<FileStringVect> retObj = nullptr;
 
     // Only continue if the file-string is valid
     if (!fileString.empty())
@@ -134,10 +135,13 @@ std::vector<std::string> Utils::parseFileString(const std::string& fileString)
         {
 
             // Parse the input file-string into the return vector
+            retObj = std::make_shared<FileStringVect>();
             constexpr size_t opts = yas::mem | yas::binary | yas::no_header;
             yas::mem_istream is(fileString.c_str(), fileString.size());
             yas::binary_iarchive<yas::mem_istream, opts> ia(is);
-            ia & retVect;
+            ia & retObj->rawVect;
+            retObj->size = retObj->rawVect.size();
+            retObj->index = 0;
         }
 
         // Catch any and all exceptions here
@@ -145,12 +149,97 @@ std::vector<std::string> Utils::parseFileString(const std::string& fileString)
         {
 
             // Clear the return vector on exception
-            retVect.clear();
+            retObj = nullptr;
         }
     }
 
-    // Return the return vector
-    return retVect;
+    // Return the return object
+    return retObj;
+}
+
+/**
+ * Function used to get the next individual file-string vector value
+ * NOTE: This can also be used to enforce regex checks (should be used)
+ * NOTE: This operation will increment the index regardless of matching or not
+ *
+ * @param fileStringVect FileStringVect representing the file-string vector
+ * @param regexCriteria String representing the regex-criteria to use
+ * @param requiredSize Unsigned-Long representing the required size for the string
+ * @return String representing the value from the vector (if valid/matched)
+ */
+std::string Utils::getNextFileStringValue(std::shared_ptr<FileStringVect> fileStringVect,
+        const std::string& regexCriteria, unsigned long requiredSize)
+{
+
+    // Create a return string
+    std::string retString;
+
+    // Only continue if the provided information is valid
+    if (fileStringVect->index < fileStringVect->rawVect.size())
+    {
+
+        // Get the return value from the vector if the regex checks-out
+        auto tmpString = fileStringVect->rawVect[fileStringVect->index];
+        if (regexCriteria.empty() || (std::regex_match(tmpString, std::regex(regexCriteria))
+                && ((requiredSize == 0) || (tmpString.size() == requiredSize))))
+            retString = tmpString;
+    }
+
+    // Increment the provided index regardless of the return value
+    fileStringVect->index++;
+
+    // Return the return string
+    return retString;
+}
+
+/**
+* Overloaded function used to get the next individual file-string vector value
+* NOTE: This can also be used to enforce regex checks (should be used)
+* NOTE: This operation will increment the index regardless of matching or not
+*
+* @param fileStringVect FileStringVect representing the file-string vector
+* @param regexCriteria RegexType representing the regex-criteria to use
+* @return String representing the value from the vector (if valid/matched)
+*/
+std::string Utils::getNextFileStringValue(std::shared_ptr<FileStringVect> fileStringVect,
+        RegexType regexType)
+{
+
+    // Create a return string
+    std::string retString;
+
+    // Perform the lookup based on the provided regex definition
+    switch (regexType)
+    {
+
+        // Handle the SHA256 regex case
+        case RegexType::Sha256:
+            retString = getNextFileStringValue(fileStringVect, "[A-Za-z0-9]*", 64);
+            break;
+
+        // Handle the Base64 regex case
+        case RegexType::Base64:
+            retString = getNextFileStringValue(fileStringVect, "[A-Za-z0-9+/]*");
+            break;
+
+        // Handle the DecimalNumber regex case
+        case RegexType::DecimalNumber:
+            retString = getNextFileStringValue(fileStringVect, "[0-9]*.[0-9]*");
+            break;
+
+        // Handle the IntegerNumber regex case
+        case RegexType::IntegerNumber:
+            retString = getNextFileStringValue(fileStringVect, "[0-9]*");
+            break;
+
+        // Handle the AlphaNumeric regex case
+        case RegexType::AlphaNumeric:
+            retString = getNextFileStringValue(fileStringVect, "[A-Za-z0-9]*");
+            break;
+    }
+
+    // Return the return string
+    return retString;
 }
 
 /**

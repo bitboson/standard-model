@@ -452,8 +452,8 @@ bool DataStore::setChunkedData(const std::shared_ptr<Generator<std::string>>& ch
 
                 // Parse the file-string and extract the key-value pair
                 auto packedVect = Utils::parseFileString(item);
-                auto key = packedVect[0];
-                auto value = packedVect[1];
+                auto key = Utils::getNextFileStringValue(packedVect);
+                auto value = Utils::getNextFileStringValue(packedVect);
 
                 // Add the key-value pair to the data-store
                 retVal &= addItem(key, value, true);

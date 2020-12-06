@@ -42,6 +42,24 @@ namespace BitBoson::StandardModel
             Inner
         };
 
+        // Enum used to specify regex-short-hands for parsing file-strings
+        enum RegexType
+        {
+            Sha256,
+            Base64,
+            DecimalNumber,
+            IntegerNumber,
+            AlphaNumeric
+        };
+
+        // Wrapper-structure used to wrap a string-vector
+        struct FileStringVect
+        {
+            unsigned long size;
+            unsigned long index;
+            std::vector<std::string> rawVect;
+        };
+
         /**
          * Function used to get the string representation of a BigInt
          *
@@ -77,9 +95,34 @@ namespace BitBoson::StandardModel
          * Function used to parse a given file string into its component items
          *
          * @param fileString FileString representing the object to parse
-         * @return Vector fo strings representing the individual items from the file string
+         * @return FileStringVect representing the individual items from the file string
          */
-        std::vector<std::string> parseFileString(const std::string& fileString);
+        std::shared_ptr<FileStringVect> parseFileString(const std::string& fileString);
+
+        /**
+         * Function used to get the next individual file-string vector value
+         * NOTE: This can also be used to enforce regex checks (should be used)
+         * NOTE: This operation will increment the index regardless of matching or not
+         *
+         * @param fileStringVect FileStringVect representing the file-string vector
+         * @param regexCriteria String representing the regex-criteria to use
+         * @param requiredSize Unsigned-Long representing the required size for the string
+         * @return String representing the value from the vector (if valid/matched)
+         */
+        std::string getNextFileStringValue(std::shared_ptr<FileStringVect> fileStringVect,
+                const std::string& regexCriteria="", unsigned long maxSize=0);
+
+        /**
+         * Overloaded function used to get the next individual file-string vector value
+         * NOTE: This can also be used to enforce regex checks (should be used)
+         * NOTE: This operation will increment the index regardless of matching or not
+         *
+         * @param fileStringVect FileStringVect representing the file-string vector
+         * @param regexCriteria RegexType representing the regex-criteria to use
+         * @return String representing the value from the vector (if valid/matched)
+         */
+        std::string getNextFileStringValue(std::shared_ptr<FileStringVect> fileStringVect,
+                RegexType regexType);
 
         /**
          * Function used to simply concatenate the given string vector parts
