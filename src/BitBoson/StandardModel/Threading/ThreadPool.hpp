@@ -26,7 +26,6 @@
 #include <vector>
 #include <chrono>
 #include <signal.h>
-#include <pthread.h>
 #include <functional>
 #include <BitBoson/StandardModel/Threading/AsyncQueue.hpp>
 #include <BitBoson/StandardModel/Threading/ThreadSafeFlag.h>
@@ -40,7 +39,7 @@ namespace BitBoson::StandardModel
         // Private member variables
         private:
             std::mutex _lock;
-            std::vector<pthread_t> _threadPool;
+            std::vector<std::thread> _threadPool;
             std::shared_ptr<ThreadSafeFlag> _isRunning;
             std::function<void (std::shared_ptr<T>)> _callback;
 
@@ -75,15 +74,9 @@ namespace BitBoson::StandardModel
                     numThreads = hardwareConcurrency;
 
                 // Setup the thread pool for processing background tasks
-                sigset_t omask, mask;
-                sigfillset(&mask);
-                pthread_sigmask(SIG_SETMASK, &mask, &omask);
                 for (unsigned int ii = 0; ii < numThreads; ii++)
-                {
-                    pthread_t pThread;
-                    pthread_create(&pThread, NULL, (void* (*)(void*)) &ThreadPool::processEventLoop, static_cast<void*>(this));
-                    _threadPool.push_back(pThread);
-                }
+                    _threadPool.push_back(std::thread((void* (*)(void*)) &ThreadPool::processEventLoop,
+                            static_cast<void*>(this)));
             }
 
             /**
@@ -96,9 +89,8 @@ namespace BitBoson::StandardModel
                 _isRunning->setValue(false);
 
                 // Join all of the running threads
-                void* result;
-                for (const auto& threadItem : _threadPool)
-                    pthread_join(threadItem, &result);
+                for (auto& threadItem : _threadPool)
+                    threadItem.join();
             }
 
         // Private member functions

@@ -30,6 +30,7 @@ project:
     - default
     - linux-x86
     - linux-x64
+    - linux-armv7
 
 # Setup the project dependencies
 dependencies:

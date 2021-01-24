@@ -320,7 +320,7 @@ namespace BitBoson::StandardModel
             {
 
                 // Lock the internally stored mutex
-                _mutex.lock();
+                mutexLock(resource);
                 _isLocked = true;
                 _resource = resource;
             }
@@ -339,7 +339,7 @@ namespace BitBoson::StandardModel
                     _isLocked = false;
 
                     // Actually unlock the mutex itself
-                    mutexUnlock();
+                    mutexUnlock(_resource);
 
                     // Inform the singleton LockKeyManager that
                     // the resource has been free for cleanup
@@ -355,7 +355,7 @@ namespace BitBoson::StandardModel
             {
 
                 // Attempt to get the lock to force blocking
-                mutexLock();
+                mutexLock(_resource);
                 _isLocked = true;
             }
 
@@ -369,8 +369,10 @@ namespace BitBoson::StandardModel
 
             /**
              * Virtual internal function used to perform the mutex-lock
+             *
+             * @param resourceKey String representing the resource to lock
              */
-            virtual void mutexLock()
+            virtual void mutexLock(const std::string& resourceKey)
             {
 
                 // Simply lock the mutex held internally
@@ -379,8 +381,10 @@ namespace BitBoson::StandardModel
 
             /**
              * Virtual internal function used to perform the mutex-unlock
+             *
+             * @param resourceKey String representing the resource to lock
              */
-            virtual void mutexUnlock()
+            virtual void mutexUnlock(const std::string& resourceKey)
             {
 
                 // Simply unlock the mutex held internally

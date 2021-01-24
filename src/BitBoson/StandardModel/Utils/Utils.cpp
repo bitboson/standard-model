@@ -20,6 +20,7 @@
  */
 
 #include <regex>
+#include <algorithm>
 #include <yas/mem_streams.hpp>
 #include <yas/binary_iarchive.hpp>
 #include <yas/binary_oarchive.hpp>
@@ -214,27 +215,51 @@ std::string Utils::getNextFileStringValue(std::shared_ptr<FileStringVect> fileSt
 
         // Handle the SHA256 regex case
         case RegexType::Sha256:
-            retString = getNextFileStringValue(fileStringVect, "[A-Za-z0-9]*", 64);
+            retString = getNextFileStringValue(fileStringVect);
+            if ((retString.find_first_not_of("1234567890ABCDEFabcdef") != std::string::npos)
+                    || (retString.size() != 64))
+                retString = "";
             break;
 
         // Handle the Base64 regex case
         case RegexType::Base64:
-            retString = getNextFileStringValue(fileStringVect, "[A-Za-z0-9+/]*");
+            retString = getNextFileStringValue(fileStringVect);
+            if (retString.find_first_not_of(
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890+/") != std::string::npos)
+                retString = "";
             break;
+
+        // // Handle the Base64Url regex case
+        // case RegexType::Base64Url:
+        //     retString = getNextFileStringValue(fileStringVect);
+        //     if (retString.find_first_not_of(
+        //             "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890-_") != std::string::npos)
+        //         retString = "";
+        //     break;
 
         // Handle the DecimalNumber regex case
         case RegexType::DecimalNumber:
-            retString = getNextFileStringValue(fileStringVect, "[0-9]*.[0-9]*");
+            retString = getNextFileStringValue(fileStringVect);
+            if ((retString.find_first_not_of("-.1234567890") != std::string::npos)
+                    || (std::count(retString.begin(), retString.end(), '.') > 1)
+                    || (std::count(retString.begin(), retString.end(), '-') > 1))
+                retString = "";
             break;
 
         // Handle the IntegerNumber regex case
         case RegexType::IntegerNumber:
-            retString = getNextFileStringValue(fileStringVect, "[0-9]*");
+            retString = getNextFileStringValue(fileStringVect);
+            if ((retString.find_first_not_of("-1234567890") != std::string::npos)
+                    || (std::count(retString.begin(), retString.end(), '-') > 1))
+                retString = "";
             break;
 
         // Handle the AlphaNumeric regex case
         case RegexType::AlphaNumeric:
-            retString = getNextFileStringValue(fileStringVect, "[A-Za-z0-9]*");
+            retString = getNextFileStringValue(fileStringVect);
+            if (retString.find_first_not_of(
+                    "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz1234567890") != std::string::npos)
+                retString = "";
             break;
     }
 

@@ -47,6 +47,7 @@ namespace BitBoson::StandardModel
         {
             Sha256,
             Base64,
+            //Base64Url,
             DecimalNumber,
             IntegerNumber,
             AlphaNumeric

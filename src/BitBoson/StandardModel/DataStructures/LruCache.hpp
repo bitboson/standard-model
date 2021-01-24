@@ -22,7 +22,7 @@
 #ifndef BITBOSON_STANDARDMODEL_LRUCACHE_HPP
 #define BITBOSON_STANDARDMODEL_LRUCACHE_HPP
 
-#include <vector>
+#include <mutex>
 #include <memory>
 #include <utility>
 
@@ -79,12 +79,16 @@ namespace BitBoson::StandardModel
             {
                 std::string key;
                 std::shared_ptr<T> val;
+                CacheNode* prev;
+                CacheNode* next;
             };
 
         // Private member variables
         private:
+            CacheNode* _head;
+            CacheNode* _tail;
             unsigned long _cacheSize;
-            std::list<std::string> _cacheList;
+            std::recursive_mutex _threadSafeMutex;
             std::shared_ptr<LruCacheSupplier> _cacheSupplier;
             std::unordered_map<std::string, CacheNode*> _cacheMap;
 
@@ -95,15 +99,21 @@ namespace BitBoson::StandardModel
              * Constructor used to setup the cache with the given specifications
              *
              * @param cacheSupplier Cache Supplier used to read and write cache data to and from
-             * @param cacheSize Long representing the in-memory cache size (in number of items)
+             * @param cacheSize Unsigned-Long representing the in-memory cache size (in number of items)
              */
             explicit LruCache(std::shared_ptr<LruCacheSupplier> cacheSupplier,
-                    long cacheSize=1024)
+                    unsigned long cacheSize=1024)
             {
 
                 // Initialize relevant member variables
                 _cacheSize = cacheSize;
                 _cacheSupplier = std::move(cacheSupplier);
+
+                // Initialize/setup the Doubly-Linked List
+                _head = new CacheNode();
+                _tail = new CacheNode();
+                _head->next = _tail;
+                _tail->prev = _head;
             }
 
             /**
@@ -119,6 +129,9 @@ namespace BitBoson::StandardModel
 
                 // Create a return flag
                 bool retFlag = false;
+
+                // Lock the synchronous function/instance mutex
+                std::unique_lock<std::recursive_mutex> lock(_threadSafeMutex);
 
                 // Only continue if the key is valid
                 if (!key.empty())
@@ -138,8 +151,8 @@ namespace BitBoson::StandardModel
                         mapVal->val = item;
 
                         // Reset the node's position in the LRU-cache
-                        _cacheList.remove(mapVal->key);
-                        _cacheList.push_front(mapVal->key);
+                        removeNodeFromList(mapVal, false);
+                        addNodeToList(mapVal);
 
                         // Setup the return value as true
                         retFlag = true;
@@ -156,8 +169,7 @@ namespace BitBoson::StandardModel
                         {
 
                             // Get the least-recently-used item
-                            auto lruItemKey = _cacheList.back();
-                            auto lruItem = _cacheMap[lruItemKey];
+                            auto lruItem = _tail->prev;
 
                             // Write the node value back to the supplier
                             _cacheSupplier->addItem(lruItem->key, lruItem->val);
@@ -165,7 +177,7 @@ namespace BitBoson::StandardModel
                             // Remove the least-recently-used item from
                             // both the map and the linked-list
                             _cacheMap.erase(lruItem->key);
-                            _cacheList.remove(lruItem->key);
+                            removeNodeFromList(lruItem, true);
                         }
 
                         // Create the new node to add for the new data
@@ -176,7 +188,7 @@ namespace BitBoson::StandardModel
                         // Add the new node we just created to the map
                         // and the linked-list for cache-use
                         _cacheMap[key] = newNode;
-                        _cacheList.push_front(newNode->key);
+                        addNodeToList(newNode);
 
                         // Setup the return value as true
                         retFlag = true;
@@ -204,6 +216,9 @@ namespace BitBoson::StandardModel
                 // Create a return value
                 std::shared_ptr<T> retVal = nullptr;
 
+                // Lock the synchronous function/instance mutex
+                std::unique_lock<std::recursive_mutex> lock(_threadSafeMutex);
+
                 // Only continue if the key is valid
                 if (!key.empty())
                 {
@@ -226,8 +241,8 @@ namespace BitBoson::StandardModel
                     {
 
                         // Move the item to the front of the linked-list
-                        _cacheList.remove(mapVal->key);
-                        _cacheList.push_front(mapVal->key);
+                        removeNodeFromList(mapVal, false);
+                        addNodeToList(mapVal);
                     }
 
                     // If we had to get the node from the supplier then
@@ -252,6 +267,9 @@ namespace BitBoson::StandardModel
                 // Create a return flag
                 bool retFlag = false;
 
+                // Lock the synchronous function/instance mutex
+                std::unique_lock<std::recursive_mutex> lock(_threadSafeMutex);
+
                 // Only continue if the key is valid
                 if (!key.empty())
                 {
@@ -267,7 +285,7 @@ namespace BitBoson::StandardModel
 
                         // Remove the item from the map and linked-list
                         _cacheMap.erase(mapVal->key);
-                        _cacheList.remove(mapVal->key);
+                        removeNodeFromList(mapVal, true);
                     }
 
                     // Perform the corresponding delete on the supplier
@@ -290,6 +308,9 @@ namespace BitBoson::StandardModel
                 // Create a return flag
                 bool retFlag = true;
 
+                // Lock the synchronous function/instance mutex
+                std::unique_lock<std::recursive_mutex> lock(_threadSafeMutex);
+
                 // Write all of the cache items back to the supplier
                 for (auto cacheItem : _cacheMap)
                     retFlag &= _cacheSupplier->addItem(
@@ -305,8 +326,65 @@ namespace BitBoson::StandardModel
             virtual ~LruCache()
             {
 
+                // Lock the synchronous function/instance mutex
+                std::unique_lock<std::recursive_mutex> lock(_threadSafeMutex);
+
                 // Flush/write-back the cache items
                 writeAllBackNow();
+
+                // Delete all nodes in the list
+                for (auto cacheItem : _cacheMap)
+                    removeNodeFromList(cacheItem.second, true);
+                delete _head;
+                delete _tail;
+            }
+
+        // Private member functions
+        private:
+
+            /**
+             * Internal function used to add a node to the linked-list
+             *
+             * @param node CacheNode Pointer representing the node to add
+             */
+            void addNodeToList(CacheNode* node)
+            {
+
+                // Get the next-node reference for the head node
+                auto headNext = _head->next;
+
+                // Adjust the head head-refernce to add the given node
+                _head->next = node;
+                node->prev = _head;
+
+                // Add the original head to be the next node after the
+                // provided/given node which now represents the head
+                node->next = headNext;
+                headNext->prev = node;
+            }
+
+            /**
+             * Internal function used to remove a node from the linked-list
+             *
+             * @param node CacheNode Pointer representing the node to remove
+             * @param deleteNode Boolean indicating whether to delete the removed node
+             */
+            void removeNodeFromList(CacheNode* node, bool deleteNode)
+            {
+
+                // Get next/previous node references for the given node
+                auto nextNode = node->next;
+                auto prevNode = node->prev;
+
+                // Adjust the references for the next/previous node to
+                // remove the provided node from the linked-list
+                nextNode->prev = prevNode;
+                prevNode->next = nextNode;
+
+                // Delete the node we are removing from the list
+                // if this is applicable
+                if (deleteNode)
+                    delete node;
             }
     };
 }
