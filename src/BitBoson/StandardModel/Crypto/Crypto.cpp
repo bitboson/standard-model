@@ -285,8 +285,8 @@ std::string Crypto::getPowHash(unsigned long paddedZeros, const std::string& ini
 
     // Continuously get a random hash (from random SHA256 of UUID) until the PoW hash criteria is met
     // When this exits, the fudge value will already be setup to include the required value to meet the criteria
-    while (getNumberOfLeadingZerosInHash(sha256(argon2d(initString + fudgeValue))) < paddedZeros)
-        fudgeValue = getRandomSha256();
+    do fudgeValue = getRandomSha256();
+    while (getNumberOfLeadingZerosInHash(sha256(argon2d(initString + fudgeValue))) < paddedZeros);
     retString = sha256(argon2d(initString + fudgeValue));
 
     // Return the return string
