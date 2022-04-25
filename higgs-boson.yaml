@@ -64,7 +64,7 @@ dependencies:
   # Setup the external dependency: leveldb
   - name: leveldb
     source: git
-    url: git://github.com/bitboson-deps/leveldb.git
+    url: https://github.com/bitboson-deps/leveldb.git
     rev: 1.22
     type: manual
     target any:
@@ -81,7 +81,7 @@ dependencies:
   # Setup the external dependency: Crypto++
   - name: cryptopp
     source: git
-    url: git://github.com/bitboson-deps/cryptopp.git
+    url: https://github.com/bitboson-deps/cryptopp.git
     rev: CRYPTOPP_8_2_0
     type: manual
     target any:
@@ -97,7 +97,7 @@ dependencies:
   # Setup the external dependency: PicoSHA2
   - name: picosha2
     source: git
-    url: git://github.com/bitboson-deps/picosha2.git
+    url: https://github.com/bitboson-deps/picosha2.git
     rev: b699e6c900be6e00152db5a3d123c1db42ea13d0
     type: manual
     target any:
@@ -110,7 +110,7 @@ dependencies:
   # Setup the external dependency: progschj
   - name: progschj
     source: git
-    url: git://github.com/bitboson-deps/ThreadPool.git
+    url: https://github.com/bitboson-deps/ThreadPool.git
     rev: 9a42ec1329f259a5f4881a291db1dcb8f2ad9040
     type: manual
     target any:
@@ -123,7 +123,7 @@ dependencies:
   # Setup the external dependency: argon2
   - name: argon2
     source: git
-    url: git://github.com/bitboson-deps/phc-winner-argon2.git
+    url: https://github.com/bitboson-deps/phc-winner-argon2.git
     rev: 20190702
     type: manual
     target any:
@@ -137,7 +137,7 @@ dependencies:
   # Setup the external dependency: yas
   - name: yas
     source: git
-    url: git://github.com/bitboson-deps/yas.git
+    url: https://github.com/bitboson-deps/yas.git
     rev: 7.0.5
     type: manual
     target any:
