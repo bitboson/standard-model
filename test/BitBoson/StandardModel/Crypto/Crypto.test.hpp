@@ -135,6 +135,40 @@ TEST_CASE ("Test ECDSA Signatures", "[CryptoTest]")
     REQUIRE (awsPublicKeyObj->isValid(awsMessage, awsSignature));
 }
 
+TEST_CASE ("Test AES Encryption/Decryption", "[CryptoTest111]")
+{
+
+    // Generate the AES encryption key
+    auto aesKey = Crypto::getEncryptionKey(EncryptionKey::KeyTypes::AES);
+
+    // Encrypt the plain-text message multiple times to verify it is different
+    std::string plainText = "Hello World!";
+    auto cipherText1 = aesKey->encrypt(plainText);
+    auto cipherText2 = aesKey->encrypt(plainText);
+    auto cipherText3 = aesKey->encrypt(plainText);
+    REQUIRE (cipherText1 != cipherText2);
+    REQUIRE (cipherText2 != cipherText3);
+    REQUIRE (cipherText3 != cipherText1);
+
+    // Decrypt all of the cipher-texts to verify they are correct
+    REQUIRE (aesKey->decrypt(cipherText1) == plainText);
+    REQUIRE (aesKey->decrypt(cipherText2) == plainText);
+    REQUIRE (aesKey->decrypt(cipherText3) == plainText);
+
+    // Verify that a new key cannot decrypt (properly) the cipher-texts
+    auto aesKey2 = Crypto::getEncryptionKey(EncryptionKey::KeyTypes::AES);
+    REQUIRE (aesKey2->decrypt(cipherText1) != plainText);
+    REQUIRE (aesKey2->decrypt(cipherText2) != plainText);
+    REQUIRE (aesKey2->decrypt(cipherText3) != plainText);
+
+    // Create another key object using the values from the first
+    auto aesKey3 = Crypto::getEncryptionKey(EncryptionKey::KeyTypes::AES);
+    aesKey3->setEncryptionKey(aesKey->getEncryptionKey());
+    REQUIRE (aesKey3->decrypt(cipherText1) == plainText);
+    REQUIRE (aesKey3->decrypt(cipherText2) == plainText);
+    REQUIRE (aesKey3->decrypt(cipherText3) == plainText);
+}
+
 TEST_CASE ("Test Base 64 Encoding/Decoding", "[CryptoTest]")
 {
 

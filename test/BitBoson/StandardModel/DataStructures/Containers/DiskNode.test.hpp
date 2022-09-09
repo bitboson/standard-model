@@ -22,6 +22,7 @@
 #ifndef BITBOSON_STANDARDMODEL_DISKNODE_TEST_HPP
 #define BITBOSON_STANDARDMODEL_DISKNODE_TEST_HPP
 
+#include <BitBoson/StandardModel/FileSystem/FileSystem.h>
 #include <BitBoson/StandardModel/DataStructures/AvlTree.hpp>
 #include <BitBoson/StandardModel/DataStructures/Containers/DiskNode.hpp>
 

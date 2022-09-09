@@ -24,6 +24,7 @@
 
 #include <string>
 #include <BitBoson/StandardModel/Primitives/BigInt.hpp>
+#include <BitBoson/StandardModel/Crypto/Encryption/EncryptionKey.hpp>
 #include <BitBoson/StandardModel/Crypto/DigitalSignatures/DigitalSignatureKeyPair.hpp>
 
 namespace BitBoson::StandardModel
@@ -59,6 +60,14 @@ namespace BitBoson::StandardModel
          */
         std::shared_ptr<DigitalSignatureKeyPair> getPublicKey(
                 DigitalSignatureKeyPair::KeyTypes keyType, const std::string& publicKey);
+
+        /**
+         * Function used to get a new encryption key (and IV) for symmetric encryption
+         *
+         * @param keyType KeyTypes representing the encryption-key type
+         * @return EncryptionKey representing the private key and IV for encryption
+         */
+        std::shared_ptr<EncryptionKey> getEncryptionKey(EncryptionKey::KeyTypes keyType);
 
         /**
          * Function used to get the integer (BigInt) representation of the given hexadecimal hash value

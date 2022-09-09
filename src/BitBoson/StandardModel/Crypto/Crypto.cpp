@@ -27,6 +27,7 @@
 #include <BitBoson/StandardModel/Utils/Utils.h>
 #include <BitBoson/StandardModel/Crypto/Crypto.h>
 #include <BitBoson/StandardModel/Crypto/SecureRNG.h>
+#include <BitBoson/StandardModel/Crypto/Encryption/AesEncryptionKey.hpp>
 #include <BitBoson/StandardModel/Crypto/DigitalSignatures/EcdsaKeyPair.hpp>
 #include <BitBoson/StandardModel/Crypto/DigitalSignatures/WinternitzKeyPair.hpp>
 
@@ -142,6 +143,42 @@ std::shared_ptr<DigitalSignatureKeyPair> Crypto::getPublicKey(
         retObj->setPublicKey(publicKey);
 
     // Return the key-pair object
+    return retObj;
+}
+
+/**
+ * Function used to get a new encryption key (and IV) for symmetric encryption
+ *
+ * @param keyType KeyTypes representing the encryption-key type
+ * @return EncryptionKey representing the private key and IV for encryption
+ */
+std::shared_ptr<EncryptionKey> Crypto::getEncryptionKey(EncryptionKey::KeyTypes keyType)
+{
+
+    // Create a return encryption-key object
+    std::shared_ptr<EncryptionKey> retObj = nullptr;
+
+    // Setup/Initialize the encryption-key based on the provided type
+    switch (keyType)
+    {
+
+        // Handle the AES key-type
+        case EncryptionKey::KeyTypes::AES:
+            retObj = std::make_shared<AesEncryptionKey>();
+            break;
+
+        // Handle the NONE key-type (and thus default)
+        case EncryptionKey::KeyTypes::NONE:
+            retObj = nullptr;
+        default:
+            retObj = nullptr;
+    }
+
+    // If the key-type was valid generate the new encryption-key
+    if (retObj != nullptr)
+        retObj->generateNewKey();
+
+    // Return the encryption-key object
     return retObj;
 }
 
