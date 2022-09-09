@@ -31,6 +31,10 @@ project:
     - linux-x86
     - linux-x64
     - linux-armv7
+    - android-arm
+    - android-arm64
+    - apple-darwin-arm64
+    - windows-shared-x64
 
 # Setup the project dependencies
 dependencies:
@@ -39,25 +43,110 @@ dependencies:
   - name: boost
     source: git
     url: https://github.com/boostorg/boost.git
-    rev: boost-1.69.0
+    rev: boost-1.76.0
     type: manual
-    target any:
+    target linux:
       build:
+        - rm -rf project-config.jam
+        - rm -rf project-config.jam.*
         - ./bootstrap.sh --exec-prefix=/usr/local
-          --with-libraries=system,filesystem,regex,thread,chrono,context,coroutine
+          --with-libraries=atomic,system,date_time,filesystem,regex,thread,chrono,context,coroutine
           --libdir=output/libs
           --includedir=output/includes
+        - rm -rf user-config.jam
+        - rm -rf output/libs/
+        - ./b2 clean
         - ./b2 variant=release
         - ./b2 install
       libs:
-        - output/libs/libboost_atomic.so.1.69.0
-        - output/libs/libboost_chrono.so.1.69.0
-        - output/libs/libboost_context.so.1.69.0
-        - output/libs/libboost_coroutine.so.1.69.0
-        - output/libs/libboost_filesystem.so.1.69.0
-        - output/libs/libboost_regex.so.1.69.0
-        - output/libs/libboost_system.so.1.69.0
-        - output/libs/libboost_thread.so.1.69.0
+        - output/libs/libboost_atomic.so.1.76.0
+        - output/libs/libboost_chrono.so.1.76.0
+        - output/libs/libboost_context.so.1.76.0
+        - output/libs/libboost_coroutine.so.1.76.0
+        - output/libs/libboost_filesystem.so.1.76.0
+        - output/libs/libboost_regex.so.1.76.0
+        - output/libs/libboost_system.so.1.76.0
+        - output/libs/libboost_date_time.so.1.76.0
+        - output/libs/libboost_thread.so.1.76.0
+      include:
+        - output/includes/
+    target android:
+      build:
+        - rm -rf project-config.jam
+        - rm -rf project-config.jam.*
+        - ./bootstrap.sh --exec-prefix=/usr/local
+          --with-libraries=atomic,system,date_time,filesystem,regex,thread,chrono,context,coroutine
+          --libdir=output/libs
+          --includedir=output/includes
+        - rm -rf user-config.jam
+        - rm -rf output/libs/
+        - ./b2 clean
+        - echo -e __QUOTE__ using clang __COLON__ arm __COLON__ ${ANDROID_NDK_ROOT}/bin/${CROSS_TRIPLE}-clang++ ; __QUOTE__ > user-config.jam
+        - ./b2 variant=release toolset=clang-arm target-os=android link=shared
+        - ./b2 install variant=release toolset=clang-arm target-os=android
+      libs:
+        - output/libs/libboost_atomic.so.1.76.0
+        - output/libs/libboost_chrono.so.1.76.0
+        - output/libs/libboost_context.so.1.76.0
+        - output/libs/libboost_coroutine.so.1.76.0
+        - output/libs/libboost_filesystem.so.1.76.0
+        - output/libs/libboost_regex.so.1.76.0
+        - output/libs/libboost_system.so.1.76.0
+        - output/libs/libboost_date_time.so.1.76.0
+        - output/libs/libboost_thread.so.1.76.0
+      include:
+        - output/includes/
+    target darwin:
+      build:
+        - rm -rf project-config.jam
+        - rm -rf project-config.jam.*
+        - ./bootstrap.sh --exec-prefix=/usr/local
+          --with-libraries=atomic,system,date_time,filesystem,regex,thread,chrono,context,coroutine
+          --libdir=output/libs
+          --includedir=output/includes
+        - rm -rf user-config.jam
+        - rm -rf output/libs/
+        - ./b2 clean
+        - echo -e __QUOTE__ using clang __COLON__ macarm __COLON__ xcrun clang -stdlib=libc++ -std=c++11 -fvisibility-inlines-hidden -isysroot ${OSXCROSS_SDK} ; __QUOTE__ > user-config.jam
+        - ./b2 variant=release toolset=clang-macarm target-os=darwin address-model=64 link=shared architecture=arm binary-format=mach-o abi=aapcs
+        - ./b2 install variant=release toolset=clang-macarm target-os=darwin
+      libs:
+        - output/libs/libboost_atomic.dylib
+        - output/libs/libboost_chrono.dylib
+        - output/libs/libboost_context.dylib
+        - output/libs/libboost_coroutine.dylib
+        - output/libs/libboost_filesystem.dylib
+        - output/libs/libboost_regex.dylib
+        - output/libs/libboost_system.dylib
+        - output/libs/libboost_date_time.dylib
+        - output/libs/libboost_thread.dylib
+      include:
+        - output/includes/
+    target windows:
+      build:
+        - rm -rf project-config.jam
+        - rm -rf project-config.jam.*
+        - ./bootstrap.sh --exec-prefix=/usr/local
+          --with-libraries=atomic,system,date_time,filesystem,regex,thread,chrono,context,coroutine
+          --libdir=output/libs
+          --includedir=output/includes
+          --without-icu
+        - rm -rf user-config.jam
+        - rm -rf output/libs/
+        - ./b2 clean
+        - echo -e __QUOTE__ using gcc __COLON__ higgsboson __COLON__ gcc-higgsboson -arch x86 -stdlib=libc++ -std=c++11 -fvisibility-inlines-hidden -isysroot /usr/src/mxe ; __QUOTE__ > user-config.jam
+        - ./b2 variant=release toolset=gcc-higgsboson target-os=windows address-model=64 link=shared architecture=x86 binary-format=pe abi=ms
+        - ./b2 install variant=release toolset=gcc-higgsboson target-os=windows address-model=64 link=shared architecture=x86 binary-format=pe abi=ms
+      libs:
+        - output/libs/libboost_atomic.dll
+        - output/libs/libboost_chrono.dll
+        - output/libs/libboost_context.dll
+        - output/libs/libboost_coroutine.dll
+        - output/libs/libboost_filesystem.dll
+        - output/libs/libboost_regex.dll
+        - output/libs/libboost_system.dll
+        - output/libs/libboost_date_time.dll
+        - output/libs/libboost_thread.dll
       include:
         - output/includes/
 
@@ -67,32 +156,108 @@ dependencies:
     url: https://github.com/bitboson-deps/leveldb.git
     rev: 1.22
     type: manual
-    target any:
+    target linux:
       build:
-        - mkdir -p build
-        - cd build
+        - rm -rf build-linux
+        - mkdir -p build-linux
+        - cd build-linux
         - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
         - make leveldb
       libs:
-        - build/libleveldb.so.1
+        - build-linux/libleveldb.so.1
+      include:
+        - include/
+    target android:
+      build:
+        - rm -rf build-android
+        - mkdir -p build-android
+        - cd build-android
+        - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
+        - make leveldb
+      libs:
+        - build-android/libleveldb.so
+      include:
+        - include/
+    target darwin:
+      build:
+        - rm -rf build-darwin
+        - mkdir -p build-darwin
+        - cd build-darwin
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 $CMAKE -DDARWIN=1 -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make leveldb
+      libs:
+        - build-darwin/libleveldb.dylib
+      include:
+        - include/
+    target windows:
+      build:
+        - rm -rf build-windows
+        - mkdir -p build-windows
+        - cd build-windows
+        - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
+        - make leveldb
+      libs:
+        - build-windows/libleveldb.dll
       include:
         - include/
 
   # Setup the external dependency: Crypto++
   - name: cryptopp
     source: git
-    url: https://github.com/bitboson-deps/cryptopp.git
-    rev: CRYPTOPP_8_2_0
+    url: https://github.com/weidai11/cryptopp.git
+    rev: CRYPTOPP_8_6_0
     type: manual
-    target any:
+    target linux:
       build:
-        - make dynamic
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make clean
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make dynamic
         - mkdir -p output-headers/cryptopp
         - cp *.h output-headers/cryptopp
       libs:
         - libcryptopp.so.8
       include:
         - output-headers/cryptopp
+    target android:
+      build:
+        - make -f GNUmakefile-cross clean
+        - source ./TestScripts/setenv-android.sh
+        - make -f GNUmakefile-cross dynamic
+        - mkdir -p output-headers/cryptopp
+        - cp *.h output-headers/cryptopp
+      libs:
+        - libcryptopp.so
+      include:
+        - output-headers/cryptopp
+    target darwin:
+      build:
+        - make clean
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make dynamic
+        - mkdir -p output-headers/cryptopp
+        - cp *.h output-headers/cryptopp
+      libs:
+        - libcryptopp.dylib
+      include:
+        - output-headers/cryptopp
+    target windows:
+      build:
+        - make clean
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make dynamic
+        - mkdir -p output-headers/cryptopp
+        - cp *.h output-headers/cryptopp
+      libs:
+        - libcryptopp.dll
+      include:
+        - output-headers/cryptopp
+
+  # Setup the external dependency: eigen
+  - name: eigen
+    source: git
+    url: https://gitlab.com/libeigen/eigen.git
+    rev: 3.4
+    type: manual
+    target any:
+      include:
+        - Eigen
 
   # Setup the external dependency: PicoSHA2
   - name: picosha2
@@ -102,23 +267,11 @@ dependencies:
     type: manual
     target any:
       build:
+        - rm -rf output-headers
         - mkdir -p output-headers/picosha2
         - cp picosha2.h output-headers/picosha2
       include:
         - output-headers/picosha2
-
-  # Setup the external dependency: progschj
-  - name: progschj
-    source: git
-    url: https://github.com/bitboson-deps/ThreadPool.git
-    rev: 9a42ec1329f259a5f4881a291db1dcb8f2ad9040
-    type: manual
-    target any:
-      build:
-        - mkdir -p output-headers/progschj
-        - cp ThreadPool.h output-headers/progschj
-      include:
-        - output-headers/progschj
 
   # Setup the external dependency: argon2
   - name: argon2
@@ -126,11 +279,36 @@ dependencies:
     url: https://github.com/bitboson-deps/phc-winner-argon2.git
     rev: 20190702
     type: manual
-    target any:
+    target linux:
       build:
+        - make clean
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make
+      libs:
+        - libargon2.so.1
+      include:
+        - include/
+    target android:
+      build:
+        - make clean
         - make
       libs:
         - libargon2.so.1
+      include:
+        - include/
+    target darwin:
+      build:
+        - make clean
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make
+      libs:
+        - libargon2.1.dylib
+      include:
+        - include/
+    target windows:
+      build:
+        - make clean
+        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make
+      libs:
+        - libargon2.dll
       include:
         - include/
 
