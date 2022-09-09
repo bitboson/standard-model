@@ -81,9 +81,8 @@ dependencies:
         - rm -rf user-config.jam
         - rm -rf output/libs/
         - ./b2 clean
-        - echo -e __QUOTE__ using clang __COLON__ arm __COLON__ ${ANDROID_NDK_ROOT}/bin/${CROSS_TRIPLE}-clang++ ; __QUOTE__ > user-config.jam
-        - ./b2 variant=release toolset=clang-arm target-os=android link=shared
-        - ./b2 install variant=release toolset=clang-arm target-os=android
+        - ./b2 variant=release toolset=clang-android target-os=android address-model=64 link=shared architecture=arm binary-format=elf abi=aapcs
+        - ./b2 install variant=release toolset=clang-android target-os=android address-model=64 link=shared architecture=arm binary-format=elf abi=aapcs
       libs:
         - output/libs/libboost_atomic.so.1.76.0
         - output/libs/libboost_chrono.so.1.76.0
@@ -290,7 +289,7 @@ dependencies:
     target android:
       build:
         - make clean
-        - make
+        - make libargon2.so.1
       libs:
         - libargon2.so.1
       include:
