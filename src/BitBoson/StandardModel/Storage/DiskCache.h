@@ -42,20 +42,9 @@ namespace BitBoson::StandardModel
             /**
              * Constructor used to setup the disk-cache instance
              *
-             * @param cacheSizeInBytes Long representing the cache size (in bytes)
              * @param directory String representing the directory to store information in
              */
-            explicit DiskCache(long cacheSizeInBytes=DataStore::DEFAULT_CACHE_SIZE,
-                    const std::string& directory="");
-
-           /**
-            * Constructor used to setup the disk-cache instance
-            *
-            * @param directory String representing the directory to store information in
-            * @param cacheSizeInBytes Long representing the cache size (in bytes)
-            */
-           explicit DiskCache(const std::string& directory,
-                    long cacheSizeInBytes=DataStore::DEFAULT_CACHE_SIZE);
+            explicit DiskCache(const std::string& directory="");
 
             /**
              * Function used to get the current cache directory being used
@@ -108,17 +97,6 @@ namespace BitBoson::StandardModel
              * Destructor used to cleanup the cache entirely
              */
             virtual ~DiskCache();
-
-        // Private member functions
-        private:
-
-            /**
-             * Internal function used to setup the disk-cache instance
-             *
-             * @param cacheSizeInBytes Long representing the cache size (in bytes)
-             * @param directory String representing the directory to store information in
-             */
-            void initializeCache(long cacheSizeInBytes, const std::string& directory);
     };
 }
 

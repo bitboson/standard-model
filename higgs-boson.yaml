@@ -84,15 +84,15 @@ dependencies:
         - ./b2 variant=release toolset=clang-android target-os=android address-model=64 link=shared architecture=arm binary-format=elf abi=aapcs
         - ./b2 install variant=release toolset=clang-android target-os=android address-model=64 link=shared architecture=arm binary-format=elf abi=aapcs
       libs:
-        - output/libs/libboost_atomic.so.1.76.0
-        - output/libs/libboost_chrono.so.1.76.0
-        - output/libs/libboost_context.so.1.76.0
-        - output/libs/libboost_coroutine.so.1.76.0
-        - output/libs/libboost_filesystem.so.1.76.0
-        - output/libs/libboost_regex.so.1.76.0
-        - output/libs/libboost_system.so.1.76.0
-        - output/libs/libboost_date_time.so.1.76.0
-        - output/libs/libboost_thread.so.1.76.0
+        - output/libs/libboost_atomic.so
+        - output/libs/libboost_chrono.so
+        - output/libs/libboost_context.so
+        - output/libs/libboost_coroutine.so
+        - output/libs/libboost_filesystem.so
+        - output/libs/libboost_regex.so
+        - output/libs/libboost_system.so
+        - output/libs/libboost_date_time.so
+        - output/libs/libboost_thread.so
       include:
         - output/includes/
     target darwin:
@@ -148,57 +148,6 @@ dependencies:
         - output/libs/libboost_thread.dll
       include:
         - output/includes/
-
-  # Setup the external dependency: leveldb
-  - name: leveldb
-    source: git
-    url: https://github.com/bitboson-deps/leveldb.git
-    rev: 1.22
-    type: manual
-    target linux:
-      build:
-        - rm -rf build-linux
-        - mkdir -p build-linux
-        - cd build-linux
-        - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
-        - make leveldb
-      libs:
-        - build-linux/libleveldb.so.1
-      include:
-        - include/
-    target android:
-      build:
-        - rm -rf build-android
-        - mkdir -p build-android
-        - cd build-android
-        - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
-        - make leveldb
-      libs:
-        - build-android/libleveldb.so
-      include:
-        - include/
-    target darwin:
-      build:
-        - rm -rf build-darwin
-        - mkdir -p build-darwin
-        - cd build-darwin
-        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 $CMAKE -DDARWIN=1 -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
-        - HIGGS_BOSON_ENABLE_UNAME_SPOOFING=1 make leveldb
-      libs:
-        - build-darwin/libleveldb.dylib
-      include:
-        - include/
-    target windows:
-      build:
-        - rm -rf build-windows
-        - mkdir -p build-windows
-        - cd build-windows
-        - cmake -DCMAKE_BUILD_TYPE=Release -DBUILD_SHARED_LIBS=1 ..
-        - make leveldb
-      libs:
-        - build-windows/libleveldb.dll
-      include:
-        - include/
 
   # Setup the external dependency: Crypto++
   - name: cryptopp

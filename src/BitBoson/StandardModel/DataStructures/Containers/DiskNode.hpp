@@ -50,15 +50,13 @@ namespace BitBoson::StandardModel
                     /**
                      * Constructor used to setup the allocator and its underlying disk-cache
                      *
-                     * @param cacheSizeInBytes Long representing the cache size (in bytes)
                      * @param directory String representing the directory to store information in
                      */
-                    explicit DiskNodeAllocator(long cacheSizeInBytes=DataStore::DEFAULT_CACHE_SIZE,
-                                      const std::string& directory="")
+                    explicit DiskNodeAllocator(const std::string& directory="")
                     {
 
                         // Setup the disk-cache instance with the provided arguments
-                        _internalDiskCache = std::make_shared<DiskCache>(cacheSizeInBytes, directory);
+                        _internalDiskCache = std::make_shared<DiskCache>(directory);
                     }
 
                     /**

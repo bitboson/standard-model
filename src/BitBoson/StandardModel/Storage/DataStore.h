@@ -25,8 +25,7 @@
 #include <string>
 #include <mutex>
 #include <memory>
-#include <leveldb/db.h>
-#include <BitBoson/StandardModel/Primitives/Generator.hpp>
+#include <BitBoson/StandardModel/FileSystem/FileSystem.h>
 
 namespace BitBoson::StandardModel
 {
@@ -34,16 +33,11 @@ namespace BitBoson::StandardModel
     class DataStore
     {
 
-        // Public constants
-        public:
-            static const long DEFAULT_CACHE_SIZE;
-
         // Private member variables
         private:
             std::string _dataStoreDir;
-            leveldb::DB* _keyValueDb;
-            leveldb::Options _options;
             std::recursive_mutex _mutex;
+            std::shared_ptr<FileSystem> _fileSystem;
 
         // Public member functions
         public:
@@ -55,11 +49,8 @@ namespace BitBoson::StandardModel
              *                 the key-value data store directory file
              * @param reCreate Boolean indicating whether to re-create the data-store or not
              *                 This will delete everything in the containing directory
-             * @param cacheSizeInBytes Long representing the cache size for
-             *                         the data-store (in bytes)
              */
-            explicit DataStore(const std::string& dataDir, bool recreate=false,
-                    long cacheSizeInBytes=DEFAULT_CACHE_SIZE);
+            explicit DataStore(const std::string& dataDir, bool recreate=false);
 
             /**
              * Function used to get the current directory being used for the data-store
@@ -103,61 +94,9 @@ namespace BitBoson::StandardModel
             void deleteEntireDataStore(bool reCreate=false);
 
             /**
-             * Function used to get a next-item iterator based on the given key
-             * NOTE: The first item returned is the reference key, if it exists
-             *
-             * @param refKey String representing the key to use as reference for the next item
-             * @return Generator representing the next-key iterator for the given key
-             */
-            std::shared_ptr<Generator<std::string>> getNextIterator(const std::string& refKey);
-
-            /**
-             * Function used to get a previous-item iterator based on the given key
-             * NOTE: The first item returned is the reference key, if it exists
-             *
-             * @param refKey String representing the key to use as reference for the previous item
-             * @return Generator representing the previous-key iterator for the given key
-             */
-            std::shared_ptr<Generator<std::string>> getPreviousIterator(const std::string& refKey);
-
-            /**
-             * Function used to get the next key for the given reference key (or empty if invalid)
-             *
-             * @param refKey String representing the key to use as reference
-             * @return String representing the next key for the given key (or empty if invalid)
-             */
-            std::string getNextKey(const std::string& refKey);
-
-            /**
-             * Function used to get the previous key for the given reference key (or empty if invalid)
-             *
-             * @param refKey String representing the key to use as reference
-             * @return String representing the previous key for the given key (or empty if invalid)
-             */
-            std::string getPreviousKey(const std::string& refKey);
-
-            /**
-             * Function used to set the data-chunks representing the data-store's internal data
-             * NOTE: This will overwrite any conflicting values already in the data-store
-             *
-             * @param chunkGenerator Generator representing the chunked data-store data
-             * @return Boolean indicating whether the operation was successful or not
-             */
-            bool setChunkedData(const std::shared_ptr<Generator<std::string>>& chunkGenerator);
-
-            /**
-             * Function used to get the data-chunks representing the data-store's internal data
-             * NOTE: This can be used to re-create the data-store in the future
-             *
-             * @param chunkSizeInBytes Long representing the chunk size to get in bytes
-             * @return Generator representing the chunked data-store data
-             */
-            std::shared_ptr<Generator<std::string>> getChunkedData(unsigned long chunkSizeInBytes=1000000);
-
-            /**
              * Destructor used to cleanup the instance
              */
-            virtual ~DataStore();
+            virtual ~DataStore() = default;
     };
 }
 

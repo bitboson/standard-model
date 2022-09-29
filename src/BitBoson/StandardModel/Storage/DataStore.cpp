@@ -19,17 +19,11 @@
  *     - Tyler Parcell <OriginLegend>
  */
 
-#include <leveldb/cache.h>
-#include <leveldb/write_batch.h>
-#include <leveldb/filter_policy.h>
 #include <BitBoson/StandardModel/Utils/Utils.h>
 #include <BitBoson/StandardModel/Storage/DataStore.h>
 #include <BitBoson/StandardModel/FileSystem/FileSystem.h>
 
 using namespace BitBoson::StandardModel;
-
-// Setup/define static constants
-const long DataStore::DEFAULT_CACHE_SIZE = 100*1048576;
 
 /**
  * Constructor used to setup the data-store instance
@@ -38,30 +32,18 @@ const long DataStore::DEFAULT_CACHE_SIZE = 100*1048576;
  *                 the key-value data store directory file
  * @param reCreate Boolean indicating whether to re-create the data-store or not
  *                 This will delete everything in the containing directory
- * @param cacheSizeInBytes Long representing the cache size for
- *                         the data-store (in bytes)
  */
-DataStore::DataStore(const std::string& dataDir, bool recreate, long cacheSizeInBytes)
+DataStore::DataStore(const std::string& dataDir, bool recreate)
 {
 
-    // Get a random directory to use as disk-cache
+    // Setup the instance on the provided directory
     _dataStoreDir = dataDir;
-    auto fileSystem = FileSystem(_dataStoreDir);
-    if (recreate && fileSystem.exists())
+    _fileSystem = std::make_shared<FileSystem>(_dataStoreDir);
+    if (recreate && _fileSystem->exists())
     {
-        fileSystem.removeDir();
-        fileSystem.createDir();
+        _fileSystem->removeDir();
+        _fileSystem->createDir();
     }
-
-    // Setup the LevelDB instance on the temporary directory
-    _keyValueDb = nullptr;
-    _options.create_if_missing = true;
-    _options.block_cache = leveldb::NewLRUCache(cacheSizeInBytes);
-    _options.filter_policy = leveldb::NewBloomFilterPolicy(10);
-    leveldb::Status status = leveldb::DB::Open(_options, _dataStoreDir, &_keyValueDb);
-
-    // Verify that the LevelDB instance is setup properly
-    assert(status.ok());  // TODO - Replace with custom exception
 }
 
 /**
@@ -98,27 +80,18 @@ bool DataStore::addItem(const std::string& key, const std::string& item, bool ov
     {
 
         // Check if the item already exists
-        std::string dummyValue;
-        leveldb::Status s = _keyValueDb->Get(leveldb::ReadOptions(), key, &dummyValue);
-        bool doesExist = s.ok();
+        bool doesExist = _fileSystem->getChild(key).exists();
 
         // Add the item to the key-value store if everything checks out
         if (!doesExist || overwrite)
         {
 
-            // Create the write batch for atomic update
-            leveldb::WriteBatch batch;
+            // Remove the existing file (if applicable)
+            if (doesExist && overwrite)
+                _fileSystem->getChild(key).removeFile();
 
-            // Delete the original item if it exists already
-            if (doesExist)
-                batch.Delete(key);
-
-            // Add in the new write operation for the item
-            batch.Put(key, item);
-
-            // Commit the change to the database
-            s = _keyValueDb->Write(leveldb::WriteOptions(), &batch);
-            wasAdded = s.ok();
+            // Write the new file content to the disk
+            wasAdded = _fileSystem->getChild(key).writeSimpleFile(item);
         }
     }
 
@@ -147,13 +120,11 @@ std::string DataStore::getItem(const std::string& key, const std::string& defaul
     {
 
         // Attempt to read the item from the key-value store
-        std::string dummyValue;
-        leveldb::Status s = _keyValueDb->Get(leveldb::ReadOptions(), key, &dummyValue);
-        bool doesExist = s.ok();
+        bool doesExist = _fileSystem->getChild(key).exists();
 
         // If the item was successfully read, set the return value accordingly
         if (doesExist)
-            retValue = dummyValue;
+            retValue = _fileSystem->getChild(key).readSimpleFile();
     }
 
     // Return the return value
@@ -180,24 +151,11 @@ bool DataStore::deleteItem(const std::string& key)
     {
 
         // Check if the item already exists
-        std::string dummyValue;
-        leveldb::Status s = _keyValueDb->Get(leveldb::ReadOptions(), key, &dummyValue);
-        bool doesExist = s.ok();
+        bool doesExist = _fileSystem->getChild(key).exists();
 
         // Delete the item from the key-value store if everything checks out
         if (doesExist)
-        {
-
-            // Create the write batch for atomic update
-            leveldb::WriteBatch batch;
-
-            // Delete the old key
-            batch.Delete(key);
-
-            // Commit the change to the database
-            s = _keyValueDb->Write(leveldb::WriteOptions(), &batch);
-            wasDeleted = s.ok();
-        }
+            wasDeleted = _fileSystem->getChild(key).removeFile();
     }
 
     // Return the return flag
@@ -212,343 +170,11 @@ bool DataStore::deleteItem(const std::string& key)
 void DataStore::deleteEntireDataStore(bool reCreate)
 {
 
-    // Remove the data-store object
-    delete _keyValueDb;
-    _keyValueDb = nullptr;
-
     // Delete the data-store directory (if it exists)
-    auto fileSystem = FileSystem(_dataStoreDir);
-    if (fileSystem.exists() && fileSystem.isDirectory())
-        fileSystem.removeDir();
+    if (_fileSystem->exists() && _fileSystem->isDirectory())
+        _fileSystem->removeDir();
 
     // Re-create the data-store if desired
     if (reCreate)
-    {
-
-        // First re-create the data-store directory
-        fileSystem.createDir();
-
-        // Next re-create the data-store object itself
-        leveldb::Status status = leveldb::DB::Open(_options, _dataStoreDir, &_keyValueDb);
-        assert(status.ok());  // TODO - Replace with custom exception
-    }
-}
-
-/**
- * Function used to get a next-item iterator based on the given key
- * NOTE: The first item returned is the reference key, if it exists
- *
- * @param refKey String representing the key to use as reference for the next item
- * @return Generator representing the next-key iterator for the given key
- */
-std::shared_ptr<Generator<std::string>> DataStore::getNextIterator(const std::string& refKey)
-{
-
-    // Create and return a generator for getting the chunked data
-    auto keyValueDb = this->_keyValueDb;
-    return std::make_shared<Generator<std::string>>(
-            [keyValueDb, refKey]
-            (std::shared_ptr<Yieldable<std::string>> yielder)
-    {
-
-        // Get a database iterator
-        leveldb::ReadOptions options;
-        options.fill_cache = false;
-        options.snapshot = keyValueDb->GetSnapshot();
-        leveldb::Iterator* dbIter = keyValueDb->NewIterator(options);
-
-        // Loop through all of the keys for the data-store starting at the reference one
-        for (dbIter->Seek(refKey); dbIter->Valid(); dbIter->Next())
-        {
-
-            // Yield each item back to the caller as the key only
-            yielder->yield(dbIter->key().ToString());
-
-            // If the generator is done pre-maturely, exit the loop
-            if (yielder->isTerminated())
-                break;
-        }
-
-        // Complete the generator
-        yielder->complete();
-
-        // Cleanup the iterator and snapshot
-        delete dbIter;
-        keyValueDb->ReleaseSnapshot(options.snapshot);
-    });
-}
-
-/**
- * Function used to get a previous-item iterator based on the given key
- * NOTE: The first item returned is the reference key, if it exists
- *
- * @param refKey String representing the key to use as reference for the previous item
- * @return Generator representing the previous-key iterator for the given key
- */
-std::shared_ptr<Generator<std::string>> DataStore::getPreviousIterator(const std::string& refKey)
-{
-
-    // Create and return a generator for getting the chunked data
-    auto keyValueDb = this->_keyValueDb;
-    return std::make_shared<Generator<std::string>>(
-            [keyValueDb, refKey]
-            (std::shared_ptr<Yieldable<std::string>> yielder)
-    {
-
-        // Get a database iterator
-        leveldb::ReadOptions options;
-        options.fill_cache = false;
-        options.snapshot = keyValueDb->GetSnapshot();
-        leveldb::Iterator* dbIter = keyValueDb->NewIterator(options);
-
-        // Loop through all of the keys for the data-store starting at the reference one
-        // NOTE: This is done in reverse order to keep getting the previous keys
-        for (dbIter->Seek(refKey); dbIter->Valid(); dbIter->Prev())
-        {
-
-            // Yield each item back to the caller as the key only
-            yielder->yield(dbIter->key().ToString());
-
-            // If the generator is done pre-maturely, exit the loop
-            if (yielder->isTerminated())
-                break;
-        }
-
-        // Complete the generator
-        yielder->complete();
-
-        // Cleanup the iterator and snapshot
-        delete dbIter;
-        keyValueDb->ReleaseSnapshot(options.snapshot);
-    });
-}
-
-/**
- * Function used to get the next key for the given reference key (or empty if invalid)
- *
- * @param refKey String representing the key to use as reference
- * @return String representing the next key for the given key (or empty if invalid)
- */
-std::string DataStore::getNextKey(const std::string& refKey)
-{
-
-    // Create a return value
-    std::string retValue;
-
-    // Only continue if the provided key is non-empty and is
-    // a key which actually exists in the data-store
-    if ((!refKey.empty()) && (!getItem(refKey).empty()))
-    {
-
-        // Get the next iterator for the supplied key
-        auto nextIter = getNextIterator(refKey);
-
-        // Keep iterating over the next items until we've found the return value
-        while (nextIter->hasMoreItems())
-        {
-
-            // Get the next item from the iterator
-            retValue = nextIter->getNextItem();
-
-            // If the next key is the same as our provided one clear it
-            if (retValue == refKey)
-                retValue = "";
-
-            // If we have found a valid key, quit the remaining items
-            // and exit the loop early with the next key value
-            if (!retValue.empty())
-            {
-
-                // Quit the remaining items
-                nextIter->quitRemainingItems();
-
-                // Exit the loop early
-                break;
-            }
-        }
-    }
-
-    // Return the return value
-    return retValue;
-}
-
-/**
- * Function used to get the previous key for the given reference key (or empty if invalid)
- *
- * @param refKey String representing the key to use as reference
- * @return String representing the previous key for the given key (or empty if invalid)
- */
-std::string DataStore::getPreviousKey(const std::string& refKey)
-{
-
-    // Create a return value
-    std::string retValue;
-
-    // Only continue if the provided key is non-empty and is
-    // a key which actually exists in the data-store
-    if ((!refKey.empty()) && (!getItem(refKey).empty()))
-    {
-
-        // Get the previous iterator for the supplied key
-        auto nextIter = getPreviousIterator(refKey);
-
-        // Keep iterating over the next items until we've found the return value
-        while (nextIter->hasMoreItems())
-        {
-
-            // Get the next item from the iterator
-            retValue = nextIter->getNextItem();
-
-            // If the next key is the same as our provided one clear it
-            if (retValue == refKey)
-                retValue = "";
-
-            // If we have found a valid key, quit the remaining items
-            // and exit the loop early with the next key value
-            if (!retValue.empty())
-            {
-
-                // Quit the remaining items
-                nextIter->quitRemainingItems();
-
-                // Exit the loop early
-                break;
-            }
-        }
-    }
-
-    // Return the return value
-    return retValue;
-}
-
-/**
- * Function used to set the data-chunks representing the data-store's internal data
- * NOTE: This will overwrite any conflicting values already in the data-store
- *
- * @param chunkGenerator Generator representing the chunked data-store data
- * @return Boolean indicating whether the operation was successful or not
- */
-bool DataStore::setChunkedData(const std::shared_ptr<Generator<std::string>>& chunkGenerator)
-{
-
-    // Create a return value
-    bool retVal = true;
-
-    // Loop over all chunks for the iterator while there are still some left
-    while (chunkGenerator->hasMoreItems())
-    {
-
-        // Extract the generator's next item
-        auto nextChunk = chunkGenerator->getNextItem();
-
-        // Split the chunk up into parts based on the '~' character
-        auto splitString = Utils::splitStringByDelimiter(nextChunk, "~");
-        for (const auto& item : splitString)
-        {
-
-            // Only proceed if the item is non-empty
-            if (!item.empty())
-            {
-
-                // Parse the file-string and extract the key-value pair
-                auto packedVect = Utils::parseFileString(item);
-                auto key = Utils::getNextFileStringValue(packedVect);
-                auto value = Utils::getNextFileStringValue(packedVect);
-
-                // Add the key-value pair to the data-store
-                retVal &= addItem(key, value, true);
-            }
-        }
-    }
-
-    // Return the return value
-    return retVal;
-}
-
-/**
- * Function used to get the data-chunks representing the data-store's internal data
- * NOTE: This can be used to re-create the data-store in the future
- *
- * @param chunkSizeInBytes Long representing the chunk size to get in bytes
- * @return Generator representing the chunked data-store data
- */
-std::shared_ptr<Generator<std::string>> DataStore::getChunkedData(unsigned long chunkSizeInBytes)
-{
-
-    // Create and return a generator for getting the chunked data
-    auto keyValueDb = this->_keyValueDb;
-    return std::make_shared<Generator<std::string>>(
-            [keyValueDb, chunkSizeInBytes]
-            (std::shared_ptr<Yieldable<std::string>> yielder)
-    {
-
-        // Create an empty character array to hold the data
-        long currentIndex = 0;
-        char* dataChunk = new char[chunkSizeInBytes];
-
-        // Get a database iterator
-        leveldb::ReadOptions options;
-        options.fill_cache = false;
-        std::shared_ptr<leveldb::Iterator> dbIter(keyValueDb->NewIterator(options));
-
-        // Loop through all of the keys for the data-store
-        // extracting up to 1MB worth of data at a time
-        for (dbIter->SeekToFirst(); dbIter->Valid(); dbIter->Next())
-        {
-
-            // Extract the key-value pair from the item
-            std::vector<std::string> keyValuePair;
-            keyValuePair.push_back(dbIter->key().ToString());
-            keyValuePair.push_back(dbIter->value().ToString());
-
-            // Create a file-string for the key-value pair
-            auto fileString = Utils::getFileString(keyValuePair);
-
-            // Check if the object is simply too big for our buffered chunk
-            // in which case we will return it as-is
-            bool hasBeenYielded = false;
-            if (fileString.size() > chunkSizeInBytes)
-            {
-                yielder->yield(fileString);
-                hasBeenYielded = true;
-            }
-
-            // If the current key-value pair won't fit, yield the chunk now
-            else if ((currentIndex + fileString.size()) >= chunkSizeInBytes)
-            {
-                yielder->yield(std::string(dataChunk, currentIndex));
-                currentIndex = 0;
-            }
-
-            // If the object hasn't been yielded, add it to the current chunk
-            if (!hasBeenYielded)
-            {
-                for(char & character : fileString)
-                    dataChunk[currentIndex++] = character;
-                dataChunk[currentIndex++] = '~';
-            }
-        }
-
-        // If we get the the end, and still have data in the chunk, yield it
-        if (currentIndex > 0)
-            yielder->yield(std::string(dataChunk, currentIndex));
-
-        // Complete the generator
-        yielder->complete();
-
-        // Clear the dynamically allocated memory
-        delete[] dataChunk;
-    });
-}
-
-/**
- * Destructor used to cleanup the instance
- */
-DataStore::~DataStore()
-{
-
-    // Delete the LevelDB instance pointer
-    delete _keyValueDb;
-    delete _options.block_cache;
-    delete _options.filter_policy;
+        _fileSystem->createDir();
 }

@@ -414,8 +414,7 @@ TEST_CASE ("Setup a new Disk-Node AVL Tree on an existing cache", "[DiskNodeTest
     // Create the integer BST instance
     auto cacheDir = FileSystem::getTemporaryDir("BitBoson").getFullPath();
     auto integerAvlTree = std::make_shared<AvlTree<int, DiskNode>>();
-    auto diskNodeAllocator = std::make_shared<DiskNode<int>::DiskNodeAllocator>(
-            DataStore::DEFAULT_CACHE_SIZE, cacheDir);
+    auto diskNodeAllocator = std::make_shared<DiskNode<int>::DiskNodeAllocator>(cacheDir);
     integerAvlTree->overrideDefaultAllocator(diskNodeAllocator);
 
     // Add some new values into the tree
